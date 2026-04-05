@@ -203,14 +203,81 @@ function togglePollExpand(pollId) {
     renderPolls();
 }
 
-function editPollTitle(e, pollId) {
+function openEditModal(e, pollId) {
     e.stopPropagation();
     const poll = voteData.polls.find(p => p.id === pollId);
     if (!poll) return;
-    const newTitle = prompt('새 제목을 입력하세요:', poll.title || '');
-    if (newTitle === null || !newTitle.trim()) return;
-    poll.title = newTitle.trim();
-    saveData().then(ok => { if (ok) { showToast('제목이 수정되었습니다.'); renderApp(); } });
+
+    document.getElementById('edit-poll-id').value = pollId;
+    document.getElementById('edit-poll-type').value = poll.type;
+
+    const titleGroup = document.getElementById('edit-group-title');
+    const titleInput = document.getElementById('edit-poll-title');
+    if (poll.type === 'event') {
+        titleGroup.style.display = 'block';
+        titleInput.value = poll.title || '';
+    } else {
+        titleGroup.style.display = 'none';
+    }
+
+    document.getElementById('edit-poll-date').value = poll.date;
+    document.getElementById('edit-poll-time').value = poll.time;
+
+    const editCourseSelect = document.getElementById('edit-poll-course');
+    const knownCourses = Array.from(editCourseSelect.options).map(o => o.value).filter(v => v !== '기타(직접입력)');
+    if (knownCourses.includes(poll.course)) {
+        editCourseSelect.value = poll.course;
+        document.getElementById('edit-group-custom-course').style.display = 'none';
+    } else {
+        editCourseSelect.value = '기타(직접입력)';
+        document.getElementById('edit-group-custom-course').style.display = 'block';
+        document.getElementById('edit-poll-custom-course').value = poll.course;
+    }
+
+    document.getElementById('edit-poll-fee').value = poll.fee;
+    document.getElementById('edit-poll-teams').value = poll.teams;
+
+    document.getElementById('modal-edit').classList.add('active');
+}
+
+function toggleEditCustomCourse() {
+    const val = document.getElementById('edit-poll-course').value;
+    document.getElementById('edit-group-custom-course').style.display = val === '기타(직접입력)' ? 'block' : 'none';
+}
+
+async function handleEditPoll(e) {
+    e.preventDefault();
+    const pollId = document.getElementById('edit-poll-id').value;
+    const poll = voteData.polls.find(p => p.id === pollId);
+    if (!poll) return;
+
+    if (poll.type === 'event') {
+        const newTitle = document.getElementById('edit-poll-title').value.trim();
+        if (newTitle) poll.title = newTitle;
+    }
+    poll.date = document.getElementById('edit-poll-date').value;
+    poll.month = new Date(poll.date).getMonth() + 1;
+    poll.time = document.getElementById('edit-poll-time').value;
+
+    let course = document.getElementById('edit-poll-course').value;
+    if (course === '기타(직접입력)') {
+        course = document.getElementById('edit-poll-custom-course').value;
+    }
+    poll.course = course;
+    poll.fee = document.getElementById('edit-poll-fee').value;
+    poll.teams = document.getElementById('edit-poll-teams').value;
+
+    const btn = e.target.querySelector('button[type="submit"]');
+    btn.disabled = true;
+
+    if (await saveData()) {
+        closeModal('modal-edit');
+        showToast('수정되었습니다.');
+        renderApp();
+    } else {
+        alert('저장에 실패했습니다.');
+        btn.disabled = false;
+    }
 }
 
 function createVoterGroupsHTML(poll, isClosed) {
@@ -292,7 +359,7 @@ function createPollCard(poll) {
 
     // 관리자 버튼
     const editBtnHTML = (isAdmin && !isClosed)
-        ? `<button class="title-edit-btn" onclick="editPollTitle(event,'${poll.id}')" title="제목 수정">✏️</button>` : '';
+        ? `<button class="title-edit-btn" onclick="openEditModal(event,'${poll.id}')" title="정보 수정">✏️</button>` : '';
     let adminActionHTML = '';
     if (isAdmin && !isClosed) {
         adminActionHTML = `<button class="btn btn-sm" style="background:var(--text-muted);color:white;" onclick="event.stopPropagation();forceClosePoll('${poll.id}')">수동 마감</button>`;
@@ -344,20 +411,13 @@ function createPollCard(poll) {
                 <span class="expand-toggle">${isExpanded ? '▲' : '▼'}</span>
             </div>
             <div class="poll-summary-bottom">
-                <span class="poll-summary-meta">${formatDateStr(poll.date)} ${poll.time} &middot; ${poll.course}</span>
+                <span class="poll-summary-meta">${formatDateStr(poll.date)} ${poll.time} &middot; ${poll.course} &middot; ${parseInt(poll.fee).toLocaleString()}원 &middot; ${poll.teams}팀</span>
                 <div class="mini-chips-row">${miniChipsHTML}</div>
             </div>
         </div>
 
         ${isExpanded ? `
         <div class="poll-expanded-content">
-            <div class="poll-detail-row">
-                <span class="info-label">요금</span>
-                <span class="info-value">${parseInt(poll.fee).toLocaleString()}원</span>
-                <span class="info-label" style="margin-left:16px;">팀수</span>
-                <span class="info-value">${poll.teams}팀</span>
-            </div>
-
             ${!isClosed ? createVoteForm(poll) : ''}
 
             <div class="dashboard">

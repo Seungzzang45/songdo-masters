@@ -144,6 +144,65 @@
         </div>
     </div>
 
+    <!-- Edit Poll Modal -->
+    <div id="modal-edit" class="modal">
+        <div class="modal-content glass">
+            <h3>투표 정보 수정</h3>
+            <form id="form-edit" onsubmit="handleEditPoll(event)">
+                <input type="hidden" id="edit-poll-id">
+                <input type="hidden" id="edit-poll-type">
+
+                <div class="form-group" id="edit-group-title">
+                    <label>투표 제목</label>
+                    <input type="text" id="edit-poll-title" class="form-control">
+                </div>
+
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>날짜</label>
+                        <input type="date" id="edit-poll-date" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label>시간대</label>
+                        <input type="time" id="edit-poll-time" class="form-control" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>장소 (구장)</label>
+                    <select id="edit-poll-course" class="form-control" required onchange="toggleEditCustomCourse()">
+                        <option value="클럽72 하늘코스">클럽72 하늘코스</option>
+                        <option value="클럽72 오션코스">클럽72 오션코스</option>
+                        <option value="클럽72 레이크코스">클럽72 레이크코스</option>
+                        <option value="클럽72 클래식코스">클럽72 클래식코스</option>
+                        <option value="골프존카운티 송도">골프존카운티 송도</option>
+                        <option value="기타(직접입력)">기타 (직접입력)</option>
+                    </select>
+                </div>
+
+                <div class="form-group" id="edit-group-custom-course" style="display: none;">
+                    <input type="text" id="edit-poll-custom-course" class="form-control" placeholder="구장 이름을 입력하세요">
+                </div>
+
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>그린피</label>
+                        <input type="number" id="edit-poll-fee" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label>예정 팀수</label>
+                        <input type="number" id="edit-poll-teams" class="form-control" min="1" max="20" required>
+                    </div>
+                </div>
+
+                <div class="modal-actions mt-3">
+                    <button type="button" class="btn" style="background: rgba(0,0,0,0.08); color: var(--text-muted);" onclick="closeModal('modal-edit')">취소</button>
+                    <button type="submit" class="btn btn-primary">저장하기</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Vote Toast -->
     <div id="toast" class="toast">저장되었습니다!</div>
 
