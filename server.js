@@ -33,6 +33,6 @@ app.post('/api/vote/save', (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`투표 서버 실행 중: http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`투표 서버 실행 중: http://0.0.0.0:${PORT}`);
 });
