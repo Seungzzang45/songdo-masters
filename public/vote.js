@@ -460,7 +460,7 @@ function createVoteForm(poll) {
 
     const reasonGroupHTML = poll.multiSelect ? '' : `
         <div class="form-group" id="reason-group-${poll.id}" style="display:none;">
-            <input type="text" id="vote-reason-${poll.id}" class="form-control" placeholder="불참 사유나 비고란을 적어주세요">
+            <input type="text" id="vote-reason-${poll.id}" class="form-control" placeholder="비고란 (선택 사항)">
         </div>`;
 
     const multiNote = poll.multiSelect
@@ -485,7 +485,7 @@ function createVoteForm(poll) {
 
                 ${reasonGroupHTML}
 
-                <button type="submit" class="btn btn-primary" style="margin-top:5px;">투표 기록하기</button>
+                <button type="submit" class="btn btn-primary" style="margin-top:5px;">투표하기</button>
             </form>
         </div>
     `;
@@ -500,13 +500,8 @@ function toggleReasonInput(pollId) {
     
     if (checkedRadio) {
         reasonGroup.style.display = 'block';
-        if (checkedRadio.value === '불참') {
-            reasonInput.placeholder = "불참 사유를 반드시 적어주세요 (필수)";
-            reasonInput.required = true;
-        } else {
-            reasonInput.placeholder = "비고란 (선택 사항)";
-            reasonInput.required = false;
-        }
+        reasonInput.placeholder = "비고란 (선택 사항)";
+        reasonInput.required = false;
     }
 }
 
