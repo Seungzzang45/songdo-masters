@@ -605,6 +605,48 @@ select.form-control option { background: white; color: var(--text-main); }
 .empty-state { text-align: center; padding: 48px 20px; color: var(--text-muted); }
 .empty-state .icon { font-size: 3rem; margin-bottom: 14px; opacity: 0.35; display: block; }
 
+/* ── ANNUAL SCHEDULE ──────────────────────── */
+.annual-schedule { padding: 20px 18px; margin-bottom: 16px; }
+.annual-schedule-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 900;
+    font-size: 1.05rem;
+    color: var(--primary);
+    margin-bottom: 14px;
+}
+.schedule-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 11px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-md);
+    margin-bottom: 8px;
+    background: white;
+    transition: all 0.15s;
+}
+.schedule-item.past {
+    background: rgba(0,0,0,0.02);
+    color: var(--text-muted);
+}
+.schedule-item.next {
+    border-color: var(--primary);
+    background: rgba(0,103,71,0.04);
+    box-shadow: 0 1px 6px rgba(0,103,71,0.08);
+}
+.schedule-label { font-weight: 700; font-size: 0.93rem; }
+.schedule-badge {
+    padding: 4px 11px;
+    border-radius: 20px;
+    font-size: 0.74rem;
+    font-weight: 800;
+    letter-spacing: 0.03em;
+}
+.schedule-badge.past { background: rgba(0,0,0,0.06); color: #999; border: 1px solid #ddd; }
+.schedule-badge.future { background: var(--primary); color: white; }
+
 /* ── TOAST ────────────────────────────────── */
 .toast {
     position: fixed;

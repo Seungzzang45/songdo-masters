@@ -100,6 +100,7 @@ function renderTabs() {
         tab.classList.remove('active');
         if (tab.innerText.includes('진행중') && currentTab === 'active') tab.classList.add('active');
         if (tab.innerText.includes('지난') && currentTab === 'closed') tab.classList.add('active');
+        if (tab.innerText.includes('일정표') && currentTab === 'schedule') tab.classList.add('active');
     });
 
     if (currentTab === 'closed') {
@@ -167,9 +168,66 @@ function getOptionColorClass(optName) {
     return 'status-color-blue';
 }
 
-function renderPolls() {
+// 2026년 정기라운딩 일정 — 매월 첫째 수요일 (6월은 둘째 수요일), 1·2·8·12월 휴식
+const REGULAR_MONTHS = [3, 4, 5, 6, 7, 9, 10, 11];
+
+function getRegularRoundDateFor(year, month) {
+    const wedCountTarget = month === 6 ? 2 : 1;
+    const d = new Date(year, month - 1, 1);
+    let wedCount = 0;
+    while (d.getMonth() === month - 1) {
+        if (d.getDay() === 3) {
+            wedCount++;
+            if (wedCount === wedCountTarget) return new Date(d);
+        }
+        d.setDate(d.getDate() + 1);
+    }
+    return null;
+}
+
+function renderAnnualSchedule() {
     pollsContainer.innerHTML = '';
-    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const year = today.getFullYear();
+
+    const items = REGULAR_MONTHS.map(m => ({ month: m, date: getRegularRoundDateFor(year, m) }))
+                                .filter(x => x.date);
+
+    const futureItems = items.filter(x => x.date >= today);
+    const nextTime = futureItems.length ? futureItems[0].date.getTime() : null;
+
+    const box = document.createElement('div');
+    box.className = 'annual-schedule glass';
+    box.innerHTML = `<div class="annual-schedule-header"><span>📅</span>${year}년 전체 일정표</div>`;
+
+    items.forEach(item => {
+        const isPast = item.date < today;
+        const isNext = nextTime && item.date.getTime() === nextTime;
+        const dayDiff = Math.round((item.date - today) / (1000 * 60 * 60 * 24));
+        const mm = String(item.date.getMonth() + 1).padStart(2, '0');
+        const dd = String(item.date.getDate()).padStart(2, '0');
+
+        const row = document.createElement('div');
+        row.className = `schedule-item${isPast ? ' past' : ''}${isNext ? ' next' : ''}`;
+        row.innerHTML = `
+            <span class="schedule-label">${item.month}월 정기라운딩 — ${mm}월${dd}일(수)</span>
+            <span class="schedule-badge ${isPast ? 'past' : 'future'}">${isPast ? '지난' : 'D-' + dayDiff}</span>
+        `;
+        box.appendChild(row);
+    });
+
+    pollsContainer.appendChild(box);
+}
+
+function renderPolls() {
+    if (currentTab === 'schedule') {
+        renderAnnualSchedule();
+        return;
+    }
+
+    pollsContainer.innerHTML = '';
+
     let filtered = voteData.polls.filter(p => {
         if (currentTab === 'active') return p.status === 'active';
         return p.status === 'closed' && p.month.toString() === selectedMonth;
