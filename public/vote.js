@@ -100,7 +100,6 @@ function renderTabs() {
         tab.classList.remove('active');
         if (tab.innerText.includes('진행중') && currentTab === 'active') tab.classList.add('active');
         if (tab.innerText.includes('지난') && currentTab === 'closed') tab.classList.add('active');
-        if (tab.innerText.includes('일정표') && currentTab === 'schedule') tab.classList.add('active');
     });
 
     if (currentTab === 'closed') {
@@ -168,38 +167,30 @@ function getOptionColorClass(optName) {
     return 'status-color-blue';
 }
 
-// 2026년 정기라운딩 일정 — 매월 첫째 수요일 (6월은 둘째 수요일), 1·2·8·12월 휴식
-const REGULAR_MONTHS = [3, 4, 5, 6, 7, 9, 10, 11];
+// 2026년 송도마스터즈 연간 일정 — 정기 라운딩은 매월 첫째 수요일(6월은 둘째 수요일), 8월은 태백 라운딩
+const ANNUAL_SCHEDULE_2026 = [
+    { month: 3,  dateStr: '2026-03-04', day: '수', label: '정기라운딩' },
+    { month: 4,  dateStr: '2026-04-01', day: '수', label: '정기라운딩' },
+    { month: 5,  dateStr: '2026-05-06', day: '수', label: '정기라운딩' },
+    { month: 6,  dateStr: '2026-06-10', day: '수', label: '정기라운딩' },
+    { month: 7,  dateStr: '2026-07-01', day: '수', label: '정기라운딩' },
+    { month: 8,  dateStr: '2026-08-07', day: '금', label: '라운딩', course: '태백오투CC' },
+    { month: 9,  dateStr: '2026-09-02', day: '수', label: '정기라운딩' },
+    { month: 10, dateStr: '2026-10-07', day: '수', label: '정기라운딩' },
+    { month: 11, dateStr: '2026-11-04', day: '수', label: '정기라운딩' }
+];
 
-function getRegularRoundDateFor(year, month) {
-    const wedCountTarget = month === 6 ? 2 : 1;
-    const d = new Date(year, month - 1, 1);
-    let wedCount = 0;
-    while (d.getMonth() === month - 1) {
-        if (d.getDay() === 3) {
-            wedCount++;
-            if (wedCount === wedCountTarget) return new Date(d);
-        }
-        d.setDate(d.getDate() + 1);
-    }
-    return null;
-}
-
-function renderAnnualSchedule() {
-    pollsContainer.innerHTML = '';
+function renderAnnualSchedule(container) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const year = today.getFullYear();
-
-    const items = REGULAR_MONTHS.map(m => ({ month: m, date: getRegularRoundDateFor(year, m) }))
-                                .filter(x => x.date);
+    const items = ANNUAL_SCHEDULE_2026.map(s => ({ ...s, date: new Date(s.dateStr) }));
 
     const futureItems = items.filter(x => x.date >= today);
     const nextTime = futureItems.length ? futureItems[0].date.getTime() : null;
 
     const box = document.createElement('div');
     box.className = 'annual-schedule glass';
-    box.innerHTML = `<div class="annual-schedule-header"><span>📅</span>${year}년 전체 일정표</div>`;
+    box.innerHTML = `<div class="annual-schedule-header"><span>📅</span>2026년 전체 일정표</div>`;
 
     items.forEach(item => {
         const isPast = item.date < today;
@@ -207,25 +198,21 @@ function renderAnnualSchedule() {
         const dayDiff = Math.round((item.date - today) / (1000 * 60 * 60 * 24));
         const mm = String(item.date.getMonth() + 1).padStart(2, '0');
         const dd = String(item.date.getDate()).padStart(2, '0');
+        const courseSuffix = item.course ? ` · ${item.course}` : '';
 
         const row = document.createElement('div');
         row.className = `schedule-item${isPast ? ' past' : ''}${isNext ? ' next' : ''}`;
         row.innerHTML = `
-            <span class="schedule-label">${item.month}월 정기라운딩 — ${mm}월${dd}일(수)</span>
+            <span class="schedule-label">${item.month}월 ${item.label} — ${mm}월${dd}일(${item.day})${courseSuffix}</span>
             <span class="schedule-badge ${isPast ? 'past' : 'future'}">${isPast ? '지난' : 'D-' + dayDiff}</span>
         `;
         box.appendChild(row);
     });
 
-    pollsContainer.appendChild(box);
+    container.appendChild(box);
 }
 
 function renderPolls() {
-    if (currentTab === 'schedule') {
-        renderAnnualSchedule();
-        return;
-    }
-
     pollsContainer.innerHTML = '';
 
     let filtered = voteData.polls.filter(p => {
@@ -246,10 +233,13 @@ function renderPolls() {
                 <p>해당하는 투표가 없습니다.</p>
             </div>
         `;
-        return;
+    } else {
+        filtered.forEach(poll => pollsContainer.appendChild(createPollCard(poll)));
     }
 
-    filtered.forEach(poll => pollsContainer.appendChild(createPollCard(poll)));
+    if (currentTab === 'active') {
+        renderAnnualSchedule(pollsContainer);
+    }
 }
 
 function togglePollExpand(pollId) {
