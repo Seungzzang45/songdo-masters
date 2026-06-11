@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>송도마스터즈 시상품 및 찬조</title>
+    <meta property="og:title" content="송도마스터즈 시상품 및 찬조">
+    <meta property="og:description" content="월례회 찬조 & 시상 관리">
+    <meta property="og:type" content="website">
+    <link rel="stylesheet" href="app.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="app">
+        <header class="header">
+            <button id="admin-toggle" class="icon-btn" style="position:absolute;top:15px;right:15px;font-size:20px;color:var(--gold);" onclick="toggleAdmin()">🔒</button>
+            <h1 class="logo">송도마스터즈<span class="gold">골프회</span></h1>
+            <p class="subtitle">월례회 찬조 &amp; 시상 관리</p>
+            <div class="month-selector" id="month-selector"></div>
+        </header>
+
+        <main id="main-content">
+            <section class="card glass mb-4">
+                <h2>💰 찬조 등록 (<span class="current-month-label"></span>월)</h2>
+                <form id="form-sponsor">
+                    <div class="form-group">
+                        <label>이름 (후원자)</label>
+                        <select id="sponsor-name" required>
+                            <option value="" disabled selected>선택하세요</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>찬조 물품</label>
+                        <input type="text" id="sponsor-item" placeholder="예: 상품권 5만원" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">찬조 등록하기</button>
+                </form>
+            </section>
+
+            <section class="card glass mb-4">
+                <h2>🎁 찬조 현황 (<span class="current-month-label"></span>월)</h2>
+                <div class="summary-box">
+                    총 <span id="sponsor-count" class="gold font-bold">0</span>건 등록됨
+                </div>
+                <ul id="list-sponsors" class="sponsor-list"></ul>
+            </section>
+
+            <section class="card glass mb-4">
+                <h2>🏆 시상식 관리 (<span class="current-month-label"></span>월)</h2>
+                <p class="desc">시상 카테고리 구성 및 수상자 지정</p>
+                <div id="list-awards" class="awards-list mb-3"></div>
+                <button class="btn btn-secondary admin-only" onclick="openAddAwardModal()">+ 새로운 상 추가하기</button>
+            </section>
+        </main>
+    </div>
+
+    <div id="modal-add-award" class="modal">
+        <div class="modal-content glass">
+            <h3>상 추가/수정</h3>
+            <div class="form-group mt-3">
+                <label>시상 타이틀</label>
+                <input type="text" id="award-title" placeholder="직접 입력하거나 아래에서 선택" list="default-titles">
+                <datalist id="default-titles">
+                    <option value="MEDALLIST"></option>
+                    <option value="힘내요상"></option>
+                    <option value="전반전 여포상"></option>
+                    <option value="후반전 여포상"></option>
+                    <option value="신페 1등"></option>
+                    <option value="신페 3등"></option>
+                    <option value="신페 5등"></option>
+                    <option value="신페 8등"></option>
+                    <option value="신페 10등"></option>
+                    <option value="신페 13등"></option>
+                    <option value="신페 15등"></option>
+                    <option value="신페 18등"></option>
+                    <option value="신페 20등"></option>
+                    <option value="신페 23등"></option>
+                    <option value="신페 25등"></option>
+                    <option value="다버디상"></option>
+                    <option value="다파상"></option>
+                    <option value="다보기상"></option>
+                    <option value="다더블상"></option>
+                    <option value="다양파상"></option>
+                    <option value="행운상"></option>
+                    <option value="니어리스트"></option>
+                    <option value="롱기스트"></option>
+                    <option value="참가상"></option>
+                </datalist>
+            </div>
+            <div class="form-group">
+                <label>상품 조달 방법</label>
+                <div class="radio-group">
+                    <label><input type="radio" name="award-source" value="dues" checked onchange="toggleSourceInput()"> 회비/직접입력</label>
+                    <label><input type="radio" name="award-source" value="sponsor" onchange="toggleSourceInput()"> 찬조품 선택</label>
+                </div>
+            </div>
+            <div class="form-group" id="group-dues">
+                <label>상품 내용</label>
+                <input type="text" id="award-prize" placeholder="예: 타이틀리스트 모자">
+            </div>
+            <div class="form-group" id="group-sponsor" style="display:none;">
+                <label>등록된 찬조품 선택</label>
+                <select id="award-sponsor-select">
+                    <option value="" disabled selected>찬조품을 선택하세요</option>
+                </select>
+            </div>
+            <div class="modal-actions mt-3">
+                <button class="btn btn-secondary" onclick="closeAddAwardModal()">취소</button>
+                <button class="btn btn-primary" onclick="saveAward()">저장</button>
+            </div>
+            <input type="hidden" id="edit-award-id" value="">
+        </div>
+    </div>
+
+    <script src="golf.js"></script>
+    <script src="/nav.js" data-active="prize"></script>
+</body>
+</html>

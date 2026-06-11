@@ -137,10 +137,10 @@ body {
     align-items: center;
     justify-content: center;
     gap: 8px;
-    padding: 12px 20px;
+    padding: 16px 20px;
     border-radius: var(--radius-md);
     border: none;
-    font-size: 1rem;
+    font-size: 1.08rem;
     font-weight: 700;
     cursor: pointer;
     transition: all 0.2s;
@@ -173,12 +173,12 @@ body {
 }
 .form-control {
     width: 100%;
-    padding: 11px 14px;
+    padding: 14px 14px;
     background: #f7faf8;
     border: 1.5px solid rgba(0,103,71,0.18);
     border-radius: var(--radius-md);
     color: var(--text-main);
-    font-size: 0.97rem;
+    font-size: 1.02rem;
     transition: all 0.2s;
     font-family: inherit;
     appearance: none;
@@ -441,16 +441,17 @@ select.form-control option { background: white; color: var(--text-main); }
     justify-content: center;
     align-items: center;
     text-align: center;
-    padding: 11px 8px;
+    padding: 16px 8px;
+    min-height: 54px;
     border: 1.5px solid rgba(0,103,71,0.2);
     border-radius: var(--radius-md);
     cursor: pointer;
     transition: all 0.2s;
-    font-weight: 700;
+    font-weight: 800;
     height: 100%;
     background: white;
     color: var(--text-main);
-    font-size: 0.9rem;
+    font-size: 1.02rem;
     font-family: inherit;
 }
 .dynamic-radio-btn label:hover {
