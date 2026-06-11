@@ -113,6 +113,23 @@
     </div>
 
     <script src="golf.js"></script>
+    <script>
+        // 홈 메뉴 딥링크: ?view=sponsor 는 찬조만, ?view=award 는 시상만 표시
+        (function () {
+            const view = new URLSearchParams(location.search).get('view');
+            if (!view) return;
+            const secs = document.querySelectorAll('#main-content > section');
+            const subtitle = document.querySelector('.subtitle');
+            if (view === 'sponsor' && secs.length >= 3) {
+                secs[2].style.display = 'none';
+                if (subtitle) subtitle.innerText = '월례회 찬조 관리';
+            } else if (view === 'award' && secs.length >= 3) {
+                secs[0].style.display = 'none';
+                secs[1].style.display = 'none';
+                if (subtitle) subtitle.innerText = '월례회 시상 관리';
+            }
+        })();
+    </script>
     <script src="/nav.js" data-active="prize"></script>
 </body>
 </html>

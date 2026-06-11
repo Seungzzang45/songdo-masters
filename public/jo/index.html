@@ -1579,6 +1579,11 @@
   }
 </script>
 
+<script>
+  // 홈 메뉴 딥링크: /jo/?tab=score 로 진입하면 성적/핸디 관리 탭을 바로 연다
+  if (new URLSearchParams(location.search).get('tab') === 'score') switchTab(2);
+</script>
+
 <script src="/nav.js" data-active="jo"></script>
 </body>
 </html>
