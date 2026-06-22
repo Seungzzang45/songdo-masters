@@ -500,25 +500,24 @@ function createVoteForm(poll) {
     } else {
         inputsHTML = (poll.options || []).map((opt, idx) => `
             <div class="dynamic-radio-btn">
-                <input type="radio" id="opt-${poll.id}-${idx}" name="status-${poll.id}" value="${opt}" required onchange="toggleReasonInput('${poll.id}')">
+                <input type="radio" id="opt-${poll.id}-${idx}" name="status-${poll.id}" value="${opt}" onchange="castVote('${poll.id}', this.value)">
                 <label for="opt-${poll.id}-${idx}">${opt}</label>
             </div>
         `).join('');
     }
 
-    const reasonGroupHTML = poll.multiSelect ? '' : `
-        <div class="form-group" id="reason-group-${poll.id}" style="display:none;">
-            <input type="text" id="vote-reason-${poll.id}" class="form-control" placeholder="비고란 (선택 사항)">
-        </div>`;
-
-    const multiNote = poll.multiSelect
+    const note = poll.multiSelect
         ? `<p style="font-size:0.8rem; color:var(--gold); margin:0 0 12px;">복수선택 가능</p>`
+        : `<p style="font-size:0.8rem; color:var(--text-muted); margin:0 0 12px;">이름 선택 후 항목을 누르면 바로 투표됩니다.</p>`;
+
+    const submitButtonHTML = poll.multiSelect
+        ? `<button type="submit" class="btn btn-primary" style="margin-top:5px;">투표하기</button>`
         : '';
 
     return `
         <div class="my-vote-box">
             <h3 style="margin-top:0; margin-bottom:8px; font-size:1.1rem;">나의 투표</h3>
-            ${multiNote}
+            ${note}
             <form onsubmit="submitVote(event, '${poll.id}')">
                 <div class="form-group">
                     <select id="vote-name-${poll.id}" class="form-control" required>
@@ -531,25 +530,36 @@ function createVoteForm(poll) {
                     ${inputsHTML}
                 </div>
 
-                ${reasonGroupHTML}
-
-                <button type="submit" class="btn btn-primary" style="margin-top:5px;">투표하기</button>
+                ${submitButtonHTML}
             </form>
         </div>
     `;
 }
 
-function toggleReasonInput(pollId) {
-    // If "불참" is selected, require reason. For others, optional but show input if they want to leave memo.
-    const form = document.querySelector(`form[onsubmit="submitVote(event, '${pollId}')"]`);
-    const checkedRadio = form.querySelector(`input[name="status-${pollId}"]:checked`);
-    const reasonGroup = document.getElementById(`reason-group-${pollId}`);
-    const reasonInput = document.getElementById(`vote-reason-${pollId}`);
-    
-    if (checkedRadio) {
-        reasonGroup.style.display = 'block';
-        reasonInput.placeholder = "비고란 (선택 사항)";
-        reasonInput.required = false;
+// 단일선택 폴: 항목을 누르면 즉시 투표 저장
+async function castVote(pollId, optionValue) {
+    const poll = voteData.polls.find(p => p.id === pollId);
+    if (!poll) return;
+
+    const name = document.getElementById(`vote-name-${pollId}`).value;
+    if (!name) {
+        alert('회원 이름을 먼저 선택하세요.');
+        const checked = document.querySelector(`input[name="status-${pollId}"]:checked`);
+        if (checked) checked.checked = false;
+        return;
+    }
+
+    poll.votes[name] = {
+        option: optionValue,
+        reason: '',
+        timestamp: Date.now()
+    };
+
+    if (await saveData()) {
+        showToast(`${optionValue} 투표되었습니다.`);
+        renderApp();
+    } else {
+        alert('저장에 실패했습니다.');
     }
 }
 
@@ -576,7 +586,7 @@ async function submitVote(e, pollId) {
         selectedOption = checkedRadio.value;
     }
 
-    const reason = poll.multiSelect ? '' : (form.querySelector(`#vote-reason-${pollId}`)?.value || '');
+    const reason = '';
 
     poll.votes[name] = {
         option: selectedOption,
