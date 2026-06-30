@@ -371,6 +371,8 @@
       let courseSel = document.getElementById('courseSelect').value;
       document.getElementById("customCourseRow").style.display = (courseSel === '기타') ? 'flex' : 'none';
       initMembers();
+      // 저장된 폼 값(팀수·코스·시간·라운딩종류·체크리스트 등) 복원 — 팀수 기본값으로 팀 잘리는 문제 방지
+      restoreAdminForm(lastServerData);
       // 폼의 월을 항상 다음 정기라운딩(오늘 이후 가장 가까운 라운딩)으로 자동 설정
       autoSelectNextRegularMonth();
       updateDate();
@@ -490,6 +492,7 @@
   });
 
   let pastSchedules = []; // 과거 조편성표 히스토리
+  let lastServerData = null; // 마지막으로 불러온 서버 데이터 (관리자 진입 시 폼 복원용)
 
   let guests = [];
   let guestCounter = 0;
@@ -572,6 +575,7 @@
   function applyLoadedData(jsonStr) {
     try {
         let data = (!jsonStr || jsonStr === '{}' || jsonStr === 'null') ? {} : JSON.parse(jsonStr);
+        lastServerData = data;
 
         // 히스토리: 사전 등록 + 저장된 데이터 병합
         pastSchedules = mergePastSchedules(data.pastSchedules || [], INITIAL_PAST_SCHEDULES);
@@ -638,44 +642,7 @@
         renderRecordTable();
 
         if(MODE === 'admin') {
-           unassigned = data.unassigned || [];
-           guests = data.guests || [];
-           guestCounter = data.guestCounter || 0;
-
-           document.getElementById('monthSelect').value = data.month || 4;
-           document.getElementById('teamCountSelect').value = data.teamCount || 7;
-           document.getElementById('courseSelect').value = data.course || "오션 OUT";
-
-           // 신규 필드 (없으면 기본값)
-           document.getElementById('roundingTypeSelect').value = data.roundingType || 'regular';
-           document.getElementById('eventDateInput').value = data.eventDate || '';
-           document.getElementById('golfClubInput').value = data.golfClub || '클럽72';
-           document.getElementById('customCourseInput').value = data.customCourse || '';
-           if (data.startTime) document.getElementById('timeSelect').value = data.startTime;
-
-           // 라운딩 종류 / 코스 기타 UI 토글
-           onRoundingTypeChange();
-           let courseSel = document.getElementById('courseSelect').value;
-           document.getElementById("customCourseRow").style.display = (courseSel === '기타') ? 'flex' : 'none';
-
-           let savedChecked = data.checkedMembers || [];
-           document.querySelectorAll('.member-cb').forEach(cb => { cb.checked = savedChecked.includes(cb.value); });
-
-           // 신규 admin UI 복원
-           let dupChk = document.getElementById('allowDupChk');
-           if (dupChk) dupChk.checked = !!allowDuplicate;
-           let prChk = document.getElementById('prioritizeUnassignedChk');
-           if (prChk) prChk.checked = !!prioritizeUnassigned;
-           let apN = document.getElementById('afterPartyName');
-           let apA = document.getElementById('afterPartyAddress');
-           let apT = document.getElementById('afterPartyTime');
-           if (apN) apN.value = afterParty.name || "";
-           if (apA) apA.value = afterParty.address || "";
-           if (apT) apT.value = afterParty.time || "";
-
-           renderGuestList();
-           renderPastScheduleList();
-           renderBoard();
+           restoreAdminForm(data);
         }
     } catch (e) {
         console.error(e);
@@ -684,6 +651,47 @@
         }
         renderRecordTable();
     }
+  }
+
+  // 저장된 서버 데이터로 관리자 폼(팀수·코스·시간·라운딩종류·체크리스트 등) 복원
+  // 관리자 진입 시점에도 호출 → 팀수 기본값(5)으로 팀이 잘리는 문제 방지
+  function restoreAdminForm(data) {
+    if (!data) return;
+    unassigned = data.unassigned || [];
+    guests = data.guests || [];
+    guestCounter = data.guestCounter || 0;
+
+    document.getElementById('monthSelect').value = data.month || 4;
+    document.getElementById('teamCountSelect').value = data.teamCount || 7;
+    document.getElementById('courseSelect').value = data.course || "오션 OUT";
+
+    document.getElementById('roundingTypeSelect').value = data.roundingType || 'regular';
+    document.getElementById('eventDateInput').value = data.eventDate || '';
+    document.getElementById('golfClubInput').value = data.golfClub || '클럽72';
+    document.getElementById('customCourseInput').value = data.customCourse || '';
+    if (data.startTime) document.getElementById('timeSelect').value = data.startTime;
+
+    onRoundingTypeChange();
+    let courseSel = document.getElementById('courseSelect').value;
+    document.getElementById("customCourseRow").style.display = (courseSel === '기타') ? 'flex' : 'none';
+
+    let savedChecked = data.checkedMembers || [];
+    document.querySelectorAll('.member-cb').forEach(cb => { cb.checked = savedChecked.includes(cb.value); });
+
+    let dupChk = document.getElementById('allowDupChk');
+    if (dupChk) dupChk.checked = !!allowDuplicate;
+    let prChk = document.getElementById('prioritizeUnassignedChk');
+    if (prChk) prChk.checked = !!prioritizeUnassigned;
+    let apN = document.getElementById('afterPartyName');
+    let apA = document.getElementById('afterPartyAddress');
+    let apT = document.getElementById('afterPartyTime');
+    if (apN) apN.value = afterParty.name || "";
+    if (apA) apA.value = afterParty.address || "";
+    if (apT) apT.value = afterParty.time || "";
+
+    renderGuestList();
+    renderPastScheduleList();
+    renderBoard();
   }
 
   function switchTab(tabNum) {
