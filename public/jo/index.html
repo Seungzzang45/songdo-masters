@@ -227,7 +227,7 @@
       </div>
       <div class="setting-row" id="regularRow">
         <span class="setting-label">📅 월</span>
-        <select id="monthSelect" onchange="updateDate()"><option value="3">3월</option><option value="4">4월</option><option value="5" selected>5월</option><option value="6">6월</option><option value="7">7월</option><option value="9">9월</option><option value="10">10월</option><option value="11">11월</option></select>
+        <select id="monthSelect" onchange="onMonthChange()"><option value="3">3월</option><option value="4">4월</option><option value="5" selected>5월</option><option value="6">6월</option><option value="7">7월</option><option value="8">8월(1박2일)</option><option value="9">9월</option><option value="10">10월</option><option value="11">11월</option></select>
         <span style="font-size:11px; color:#888; margin-left:6px;">※ 8월은 이벤트만</span>
       </div>
       <div class="setting-row" id="eventRow" style="display:none;">
@@ -948,6 +948,15 @@
     let augEl = document.getElementById("augustRow");
     if (augEl) augEl.style.display = (type === 'event') ? 'flex' : 'none';
     updateDate();
+  }
+
+  // 월 드롭다운 변경 — 8월은 1박2일 이벤트로 자동 전환(1일차 세팅), 그 외는 정기라운딩 날짜 갱신
+  function onMonthChange() {
+    if (parseInt(document.getElementById('monthSelect').value) === 8) {
+      setupAugustDay(1);
+    } else {
+      updateDate();
+    }
   }
 
   // 8월 1박2일(알펜시아CC) 빠른 설정 — 일차별 날짜/시간/코스/팀수 세팅 (팀 배정은 기존 도구 사용)
