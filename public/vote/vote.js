@@ -167,14 +167,15 @@ function getOptionColorClass(optName) {
     return 'status-color-blue';
 }
 
-// 2026년 송도마스터즈 연간 일정 — 정기 라운딩은 매월 첫째 수요일(6월은 둘째 수요일), 8월은 태백 라운딩
+// 2026년 송도마스터즈 연간 일정 — 정기 라운딩은 매월 첫째 수요일(6월은 둘째 수요일), 8월은 알펜시아CC 1박2일
 const ANNUAL_SCHEDULE_2026 = [
     { month: 3,  dateStr: '2026-03-04', day: '수', label: '정기라운딩' },
     { month: 4,  dateStr: '2026-04-01', day: '수', label: '정기라운딩' },
     { month: 5,  dateStr: '2026-05-06', day: '수', label: '정기라운딩' },
     { month: 6,  dateStr: '2026-06-10', day: '수', label: '정기라운딩' },
     { month: 7,  dateStr: '2026-07-01', day: '수', label: '정기라운딩' },
-    { month: 8,  dateStr: '2026-08-07', day: '금', label: '라운딩', course: '태백오투CC' },
+    { month: 8,  dateStr: '2026-08-07', day: '금', label: '정라(1박2일) 1일차', course: '알펜시아CC' },
+    { month: 8,  dateStr: '2026-08-08', day: '토', label: '정라(1박2일) 2일차', course: '알펜시아CC' },
     { month: 9,  dateStr: '2026-09-02', day: '수', label: '정기라운딩' },
     { month: 10, dateStr: '2026-10-07', day: '수', label: '정기라운딩' },
     { month: 11, dateStr: '2026-11-04', day: '수', label: '정기라운딩' }
