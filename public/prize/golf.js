@@ -193,6 +193,13 @@ async function init() {
         await saveData();
     }
 
+    // 기존 찬조 내역을 시상관리로 일괄 자동 반영 (이미 연결된 것은 건너뜀)
+    let synced = false;
+    for (let m = 3; m <= 11; m++) {
+        if (syncSponsorAwards(m)) synced = true;
+    }
+    if (synced) await saveData();
+
     for (let m = 3; m <= 11; m++) {
         const btn = document.createElement('button');
         btn.className = `month-btn ${m === activeMonth ? 'active' : ''}`;
@@ -237,6 +244,7 @@ async function handleSponsorSubmit(e) {
     const item = document.getElementById('sponsor-item').value;
     if (!name || !item) return;
     appData[activeMonth].sponsors.push({ id: Date.now(), name, item });
+    syncSponsorAwards(activeMonth);
     await saveData();
     document.getElementById('sponsor-item').value = '';
     selectSponsorName.value = '';
@@ -332,11 +340,39 @@ window.saveSponsorEdit = async function(id) {
 }
 
 window.deleteSponsor = async function(id) {
-    if (confirm('찬조 내역을 삭제하시겠습니까?')) {
+    if (confirm('찬조 내역을 삭제하시겠습니까?\n(자동 연결된 시상 항목도 함께 삭제됩니다.)')) {
         appData[activeMonth].sponsors = appData[activeMonth].sponsors.filter(s => s.id !== id);
+        appData[activeMonth].awards = appData[activeMonth].awards.filter(a => a.sponsorId !== id);
         await saveData();
         renderAll();
     }
+}
+
+// 찬조 → 시상 자동 동기화: 해당 월의 찬조 중 아직 시상에 연결되지 않은 항목을 시상 카드로 자동 생성
+function syncSponsorAwards(month) {
+    const data = appData[month];
+    if (!data || !Array.isArray(data.sponsors) || !Array.isArray(data.awards)) return false;
+    const linked = new Set(
+        data.awards.filter(a => a.source === 'sponsor' && a.sponsorId != null).map(a => a.sponsorId)
+    );
+    let changed = false;
+    let seq = 0;
+    data.sponsors.forEach(s => {
+        if (!linked.has(s.id)) {
+            data.awards.push({
+                id: Date.now() + (seq++),
+                title: '찬조 시상',
+                source: 'sponsor',
+                prize: s.item,
+                sponsorName: s.name,
+                sponsorId: s.id,
+                winner: ''
+            });
+            linked.add(s.id);
+            changed = true;
+        }
+    });
+    return changed;
 }
 
 // --- 시상 ---
