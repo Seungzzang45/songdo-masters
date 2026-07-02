@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<!-- 송도마스터즈 짝꿍대전 — 2:2 팀 토너먼트 대진표 (천국조/지옥조, 관리자 편집·추첨 지원) -->
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>송도마스터즈 짝꿍대전</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #006747;
+            --primary-dark: #004d35;
+            --gold: #c9a84c;
+            --gold-dark: #a07830;
+            --danger: #c0392b;
+            --bg: #eef2ee;
+            --text-main: #1a2e1a;
+            --text-muted: #6b8270;
+            --border: rgba(0, 103, 71, 0.14);
+        }
+        * { box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            background-image:
+                radial-gradient(ellipse at 20% 10%, rgba(0,103,71,0.07) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 90%, rgba(201,168,76,0.06) 0%, transparent 60%);
+            color: var(--text-main);
+            font-family: 'Noto Sans KR', sans-serif;
+            margin: 0;
+            min-height: 100vh;
+        }
+        .wrapper { max-width: 1100px; margin: 0 auto; padding: 20px 12px; }
+        .header { text-align: center; padding: 10px 0 18px; position: relative; }
+        .header h1 { font-size: 1.5rem; font-weight: 900; margin: 0 0 6px; color: var(--primary); letter-spacing: -0.5px; }
+        .header h1 .gold { color: var(--gold); }
+        .subtitle { font-size: 0.82rem; color: var(--text-muted); margin: 0 0 10px; }
+        .admin-btn { position: absolute; top: 0; right: 0; background: none; border: none; font-size: 20px; cursor: pointer; opacity: 0.55; }
+        .prize-chips { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
+        .chip { font-size: 0.76rem; font-weight: 800; padding: 5px 12px; border-radius: 20px; }
+        .chip.green { background: rgba(0,103,71,0.1); color: var(--primary); border: 1px solid rgba(0,103,71,0.25); }
+        .chip.gold { background: rgba(201,168,76,0.15); color: var(--gold-dark); border: 1px solid rgba(201,168,76,0.4); }
+
+        .bracket-section { margin-bottom: 26px; }
+        .bracket-title { display: flex; align-items: baseline; gap: 10px; margin: 0 4px 10px; flex-wrap: wrap; }
+        .bracket-title h2 { font-size: 1.12rem; font-weight: 900; color: var(--primary); margin: 0; }
+        .bracket-title .prize { font-size: 0.78rem; font-weight: 800; color: var(--gold-dark); }
+
+        .bracket-scroll { overflow-x: auto; padding-bottom: 10px; -webkit-overflow-scrolling: touch; }
+        .bracket { display: flex; align-items: stretch; gap: 14px; min-width: min-content; }
+        .round-col { display: flex; flex-direction: column; min-width: 235px; width: 235px; }
+        .round-head { text-align: center; margin-bottom: 8px; }
+        .round-name { font-size: 0.88rem; font-weight: 900; color: var(--text-main); }
+        .round-deadline { font-size: 0.7rem; color: var(--text-muted); margin-left: 5px; }
+        .round-body { flex: 1; display: flex; flex-direction: column; justify-content: space-around; gap: 10px; }
+
+        .match-card { background: #fff; border: 1px solid var(--border); border-radius: 12px;
+                      box-shadow: 0 3px 12px rgba(0,103,71,0.08); overflow: hidden; position: relative; }
+        .match-meta { display: flex; justify-content: space-between; align-items: center; padding: 7px 12px 0;
+                      font-size: 0.7rem; color: var(--text-muted); }
+        .match-meta .done-tag { color: var(--primary); font-weight: 800; }
+        .team-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 12px; }
+        .team-row + .team-row { border-top: 1px dashed rgba(0,0,0,0.06); }
+        .team-name { font-size: 0.9rem; font-weight: 500; }
+        .team-row.winner { background: rgba(0,103,71,0.06); }
+        .team-row.winner .team-name { font-weight: 900; color: var(--primary); }
+        .team-row.loser .team-name { color: #b5bdb7; }
+        .win-badge { font-size: 0.66rem; font-weight: 900; color: #fff; background: var(--primary); border-radius: 10px; padding: 2px 8px; }
+        .bye-badge { font-size: 0.66rem; font-weight: 900; color: #2c2208; background: var(--gold); border-radius: 10px; padding: 2px 8px; }
+        .admin .team-row.clickable { cursor: pointer; }
+        .admin .team-row.clickable:hover { background: rgba(201,168,76,0.12); }
+        .edit-match-btn { position: absolute; top: 4px; right: 6px; background: none; border: none; cursor: pointer; font-size: 12px; opacity: 0.6; display: none; }
+        .admin .edit-match-btn { display: block; }
+        .match-note { padding: 0 12px 7px; font-size: 0.68rem; color: var(--gold-dark); }
+
+        .empty-round { border: 1.5px dashed rgba(0,103,71,0.25); border-radius: 12px; padding: 18px 10px;
+                       text-align: center; color: var(--text-muted); font-size: 0.78rem; background: rgba(255,255,255,0.5); }
+        .round-admin-btns { display: none; gap: 6px; justify-content: center; margin-top: 8px; }
+        .admin .round-admin-btns { display: flex; }
+        .mini-btn { border: none; border-radius: 8px; padding: 7px 10px; font-size: 0.74rem; font-weight: 800; cursor: pointer; font-family: inherit; }
+        .mini-btn.draw { background: var(--gold); color: #2c2208; }
+        .mini-btn.add { background: rgba(0,103,71,0.1); color: var(--primary); }
+
+        .rules-box { background: #fff; border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; margin-top: 6px; }
+        .rules-box h3 { margin: 0 0 8px; font-size: 0.9rem; color: var(--primary); }
+        .rules-box li { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 5px; line-height: 1.5; }
+
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 10000; justify-content: center; align-items: center; padding: 16px; }
+        .modal.active { display: flex; }
+        .modal-content { background: #fff; border-radius: 16px; padding: 20px; width: 100%; max-width: 400px; max-height: 90vh; overflow-y: auto; }
+        .modal-content h3 { margin: 0 0 12px; color: var(--primary); font-size: 1rem; }
+        .form-row { margin-bottom: 10px; }
+        .form-row label { display: block; font-size: 0.76rem; font-weight: 700; color: var(--text-muted); margin-bottom: 4px; }
+        .form-row input[type=text] { width: 100%; padding: 11px 12px; border: 1.5px solid var(--border); border-radius: 10px; font-family: inherit; font-size: 0.92rem; }
+        .form-check { display: flex; align-items: center; gap: 8px; font-size: 0.84rem; margin: 12px 0; }
+        .modal-actions { display: flex; gap: 8px; margin-top: 14px; }
+        .modal-actions button { flex: 1; padding: 12px; border: none; border-radius: 10px; font-weight: 800; font-size: 0.9rem; cursor: pointer; font-family: inherit; }
+        .btn-cancel { background: rgba(0,0,0,0.07); color: var(--text-muted); }
+        .btn-save { background: var(--primary); color: #fff; }
+        .btn-del { background: none; border: none; color: var(--danger); font-size: 0.8rem; font-weight: 700; cursor: pointer; margin-top: 10px; width: 100%; font-family: inherit; }
+
+        .toast { position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%) translateY(120px); background: var(--primary); color: white;
+                 padding: 12px 26px; border-radius: 26px; font-weight: 700; transition: transform 0.3s; z-index: 10001; font-size: 0.9rem; }
+        .toast.show { transform: translateX(-50%) translateY(0); }
+    </style>
+</head>
+<body>
+    <div class="wrapper">
+        <header class="header">
+            <button id="admin-btn" class="admin-btn" onclick="toggleAdmin()">🔒</button>
+            <h1>⚔️ 송마 <span class="gold">짝꿍대전</span></h1>
+            <p class="subtitle" id="pair-subtitle"></p>
+            <div class="prize-chips" id="prize-chips"></div>
+        </header>
+
+        <div id="brackets-container"><div style="text-align:center; padding:40px; color:#888;">불러오는 중...⏳</div></div>
+
+        <div class="rules-box">
+            <h3>📜 경기 방식 &amp; 룰</h3>
+            <ul id="rules-list" style="margin:0; padding-left:18px;"></ul>
+        </div>
+    </div>
+
+    <div id="modal-match" class="modal">
+        <div class="modal-content">
+            <h3 id="modal-title">경기 수정</h3>
+            <div class="form-row"><label>A팀 (짝꿍 1 &amp; 2)</label><input type="text" id="m-teamA" placeholder="예: 홍길동 & 김철수"></div>
+            <div class="form-row"><label>B팀 (짝꿍 1 &amp; 2)</label><input type="text" id="m-teamB" placeholder="부전승이면 비워두세요"></div>
+            <div class="form-row"><label>경기 일자</label><input type="text" id="m-date" placeholder="예: 7/8(수)"></div>
+            <div class="form-row"><label>경기 구장</label><input type="text" id="m-course" placeholder="예: 클럽72"></div>
+            <div class="form-row"><label>비고</label><input type="text" id="m-note" placeholder="스코어 등"></div>
+            <label class="form-check"><input type="checkbox" id="m-bye"> 부전승 (A팀 자동 진출)</label>
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="closeMatchModal()">취소</button>
+                <button class="btn-save" onclick="saveMatchModal()">저장</button>
+            </div>
+            <button class="btn-del" id="m-delete" onclick="deleteMatchModal()">🗑 이 경기 삭제</button>
+        </div>
+    </div>
+
+    <div id="toast" class="toast">저장되었습니다!</div>
+
+    <script>
+        let pairData = null;
+        let isAdmin = false;
+        let editing = null; // { b: bracketIdx, r: roundIdx, m: matchIdx|-1(신규) }
+
+        async function loadData() {
+            try {
+                const res = await fetch('/api/pair/load');
+                pairData = await res.json();
+            } catch (e) { pairData = null; }
+            if (!pairData || !pairData.brackets) pairData = { title: '짝꿍대전', subtitle: '', brackets: [], rules: [] };
+            renderAll();
+        }
+
+        async function saveData() {
+            try {
+                const res = await fetch('/api/pair/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(pairData)
+                });
+                if ((await res.text()) === 'success') { showToast('저장되었습니다!'); return true; }
+            } catch (e) {}
+            alert('저장에 실패했습니다.');
+            return false;
+        }
+
+        function esc(s) {
+            return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
+
+        function winnerName(m) {
+            if (m.winner === 'A') return m.teamA;
+            if (m.winner === 'B') return m.teamB;
+            return null;
+        }
+
+        function renderAll() {
+            document.getElementById('pair-subtitle').innerText = pairData.subtitle || '';
+            const chips = ['<span class="chip green">👑 천국조 우승 50만</span>', '<span class="chip gold">🔥 지옥조 우승 30만</span>', '<span class="chip green">🎲 다음 대진은 추첨</span>'];
+            document.getElementById('prize-chips').innerHTML = chips.join('');
+            document.getElementById('rules-list').innerHTML = (pairData.rules || []).map(r => `<li>${esc(r)}</li>`).join('');
+
+            const cont = document.getElementById('brackets-container');
+            cont.innerHTML = '';
+            cont.className = isAdmin ? 'admin' : '';
+
+            pairData.brackets.forEach((bracket, bi) => {
+                const sec = document.createElement('section');
+                sec.className = 'bracket-section';
+                sec.innerHTML = `<div class="bracket-title"><h2>${esc(bracket.name)}</h2><span class="prize">${esc(bracket.prize)}</span></div>`;
+
+                const scroll = document.createElement('div');
+                scroll.className = 'bracket-scroll';
+                const row = document.createElement('div');
+                row.className = 'bracket';
+
+                bracket.rounds.forEach((round, ri) => {
+                    const col = document.createElement('div');
+                    col.className = 'round-col';
+                    col.innerHTML = `<div class="round-head"><span class="round-name">${esc(round.name)}</span><span class="round-deadline">${esc(round.deadline)}</span></div>`;
+                    const body = document.createElement('div');
+                    body.className = 'round-body';
+
+                    if (!round.matches.length) {
+                        body.innerHTML = `<div class="empty-round">대진 미정<br><span style="font-size:0.68rem;">이전 라운드 종료 후<br>추첨으로 결정</span></div>`;
+                    } else {
+                        round.matches.forEach((m, mi) => body.appendChild(matchCard(m, bi, ri, mi)));
+                    }
+
+                    const btns = document.createElement('div');
+                    btns.className = 'round-admin-btns';
+                    let btnsHtml = `<button class="mini-btn add" onclick="openMatchModal(${bi},${ri},-1)">+ 경기 추가</button>`;
+                    if (ri > 0) btnsHtml += `<button class="mini-btn draw" onclick="drawRound(${bi},${ri})">🎲 추첨 대진</button>`;
+                    btns.innerHTML = btnsHtml;
+
+                    col.appendChild(body);
+                    col.appendChild(btns);
+                    row.appendChild(col);
+                });
+
+                scroll.appendChild(row);
+                sec.appendChild(scroll);
+                cont.appendChild(sec);
+            });
+        }
+
+        function matchCard(m, bi, ri, mi) {
+            const card = document.createElement('div');
+            card.className = 'match-card';
+            const done = !!m.winner;
+            const metaLeft = esc(m.date) || '일정 미정';
+            const metaRight = done ? '<span class="done-tag">FT</span>' : esc(m.course);
+            let html = `<button class="edit-match-btn" onclick="openMatchModal(${bi},${ri},${mi})">✏️</button>`;
+            html += `<div class="match-meta"><span>${metaLeft}${m.course && !done ? '' : ''}</span><span>${done && m.course ? esc(m.course) + ' · ' : ''}${metaRight}</span></div>`;
+
+            if (m.bye) {
+                html += teamRowHtml(m.teamA, 'A', m, bi, ri, mi, true);
+            } else {
+                html += teamRowHtml(m.teamA, 'A', m, bi, ri, mi, false);
+                html += teamRowHtml(m.teamB, 'B', m, bi, ri, mi, false);
+            }
+            if (m.note && !m.bye) html += `<div class="match-note">${esc(m.note)}</div>`;
+            card.innerHTML = html;
+            return card;
+        }
+
+        function teamRowHtml(name, side, m, bi, ri, mi, isBye) {
+            const isWin = m.winner === side;
+            const isLose = m.winner && m.winner !== side;
+            let cls = 'team-row clickable';
+            if (isWin) cls += ' winner';
+            if (isLose) cls += ' loser';
+            let badge = '';
+            if (isBye) badge = '<span class="bye-badge">부전승</span>';
+            else if (isWin) badge = '<span class="win-badge">승</span>';
+            return `<div class="${cls}" onclick="clickTeam(${bi},${ri},${mi},'${side}')">
+                <span class="team-name">${esc(name) || '<span style="color:#ccc;">(미정)</span>'}</span>${badge}
+            </div>`;
+        }
+
+        // 관리자: 팀을 누르면 승리 지정/해제
+        async function clickTeam(bi, ri, mi, side) {
+            if (!isAdmin) return;
+            const m = pairData.brackets[bi].rounds[ri].matches[mi];
+            if (m.bye) { alert('부전승 경기입니다. 수정은 ✏️ 버튼을 이용하세요.'); return; }
+            const name = side === 'A' ? m.teamA : m.teamB;
+            if (!name) return;
+            if (m.winner === side) {
+                if (confirm(`${name} 승리 표시를 취소할까요?`)) m.winner = '';
+                else return;
+            } else {
+                if (confirm(`${name} 팀을 승리로 표시할까요?`)) m.winner = side;
+                else return;
+            }
+            renderAll();
+            await saveData();
+        }
+
+        // 🎲 이전 라운드 승자들을 무작위 추첨해 이 라운드 대진 생성
+        async function drawRound(bi, ri) {
+            const rounds = pairData.brackets[bi].rounds;
+            if (ri === 0) { alert('이전 라운드가 없습니다.'); return; }
+            const prev = rounds[ri - 1];
+            const winners = prev.matches.map(winnerName).filter(Boolean);
+            const undecided = prev.matches.filter(m => !m.winner).length;
+            if (winners.length < 2) { alert('이전 라운드 승자가 2팀 이상이어야 추첨할 수 있습니다.'); return; }
+            let msg = `이전 라운드 승자 ${winners.length}팀을 무작위 추첨해 [${rounds[ri].name}] 대진을 만듭니다.`;
+            if (undecided > 0) msg += `\n⚠️ 아직 승부가 안 난 경기가 ${undecided}개 있습니다.`;
+            if (rounds[ri].matches.length > 0) msg += `\n⚠️ 기존 [${rounds[ri].name}] 대진은 삭제되고 새로 만들어집니다.`;
+            if (!confirm(msg)) return;
+
+            const pool = [...winners];
+            for (let i = pool.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [pool[i], pool[j]] = [pool[j], pool[i]];
+            }
+            const matches = [];
+            for (let i = 0; i < pool.length; i += 2) {
+                if (pool[i + 1]) {
+                    matches.push({ id: 'dr' + Date.now() + '-' + i, teamA: pool[i], teamB: pool[i + 1], date: '', course: '', winner: '', bye: false, note: '' });
+                } else {
+                    matches.push({ id: 'dr' + Date.now() + '-' + i, teamA: pool[i], teamB: '', date: '', course: '', winner: 'A', bye: true, note: '부전승' });
+                }
+            }
+            rounds[ri].matches = matches;
+            renderAll();
+            await saveData();
+            showToast('🎲 추첨 완료! 대진이 생성되었습니다.');
+        }
+
+        // ── 경기 수정/추가 모달 ──
+        function openMatchModal(bi, ri, mi) {
+            if (!isAdmin) return;
+            editing = { b: bi, r: ri, m: mi };
+            const isNew = mi === -1;
+            const m = isNew ? { teamA:'', teamB:'', date:'', course:'', note:'', bye:false } : pairData.brackets[bi].rounds[ri].matches[mi];
+            document.getElementById('modal-title').innerText = isNew ? `경기 추가 — ${pairData.brackets[bi].rounds[ri].name}` : '경기 수정';
+            document.getElementById('m-teamA').value = m.teamA || '';
+            document.getElementById('m-teamB').value = m.teamB || '';
+            document.getElementById('m-date').value = m.date || '';
+            document.getElementById('m-course').value = m.course || '';
+            document.getElementById('m-note').value = m.note || '';
+            document.getElementById('m-bye').checked = !!m.bye;
+            document.getElementById('m-delete').style.display = isNew ? 'none' : 'block';
+            document.getElementById('modal-match').classList.add('active');
+        }
+        function closeMatchModal() { document.getElementById('modal-match').classList.remove('active'); editing = null; }
+
+        async function saveMatchModal() {
+            if (!editing) return;
+            const teamA = document.getElementById('m-teamA').value.trim();
+            const teamB = document.getElementById('m-teamB').value.trim();
+            const bye = document.getElementById('m-bye').checked || (teamA && !teamB);
+            if (!teamA) { alert('A팀을 입력하세요.'); return; }
+            const { b, r, m } = editing;
+            const matches = pairData.brackets[b].rounds[r].matches;
+            const obj = {
+                id: m === -1 ? 'm' + Date.now() : matches[m].id,
+                teamA, teamB: bye ? '' : teamB,
+                date: document.getElementById('m-date').value.trim(),
+                course: document.getElementById('m-course').value.trim(),
+                note: document.getElementById('m-note').value.trim() || (bye ? '부전승' : ''),
+                bye,
+                winner: bye ? 'A' : (m === -1 ? '' : matches[m].winner)
+            };
+            if (m === -1) matches.push(obj);
+            else matches[m] = obj;
+            closeMatchModal();
+            renderAll();
+            await saveData();
+        }
+
+        async function deleteMatchModal() {
+            if (!editing || editing.m === -1) return;
+            if (!confirm('이 경기를 삭제할까요?')) return;
+            pairData.brackets[editing.b].rounds[editing.r].matches.splice(editing.m, 1);
+            closeMatchModal();
+            renderAll();
+            await saveData();
+        }
+
+        function toggleAdmin() {
+            if (isAdmin) { isAdmin = false; }
+            else {
+                const pwd = prompt('관리자 비밀번호를 입력하세요.');
+                if (pwd === '1234') isAdmin = true;
+                else if (pwd !== null) { alert('비밀번호가 틀렸습니다.'); return; }
+                else return;
+            }
+            document.getElementById('admin-btn').innerText = isAdmin ? '🔓' : '🔒';
+            renderAll();
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.innerText = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 2500);
+        }
+
+        loadData();
+    </script>
+    <script src="/nav.js" data-active="pair"></script>
+</body>
+</html>

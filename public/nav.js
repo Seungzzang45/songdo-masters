@@ -1,4 +1,4 @@
-// 모든 페이지 하단에 고정 탭바(홈/투표/조편성/시상품/연락처)를 삽입하는 공통 스크립트
+// 모든 페이지 하단에 고정 탭바(홈/투표/조편성/시상품/짝꿍대전/연락처)를 삽입하는 공통 스크립트
 (function () {
     var active = (document.currentScript && document.currentScript.dataset.active) || '';
     var tabs = [
@@ -6,6 +6,7 @@
         { key: 'vote',    href: '/vote/',    icon: '⛳', label: '투표' },
         { key: 'jo',      href: '/jo/',      icon: '👥', label: '조편성' },
         { key: 'prize',   href: '/prize/',   icon: '🏆', label: '시상품' },
+        { key: 'pair',    href: '/pair/',    icon: '⚔️', label: '짝꿍' },
         { key: 'contact', href: '/contact/', icon: '📞', label: '연락처' }
     ];
 

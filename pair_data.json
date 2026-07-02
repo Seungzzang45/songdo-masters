@@ -1,0 +1,236 @@
+{
+  "title": "2026 송마 짝꿍대전 : The Beginning",
+  "subtitle": "2:2 팀 매치플레이 (Up & Down) · 총상금 80만원 (팀당 지급)",
+  "brackets": [
+    {
+      "key": "heaven",
+      "name": "👑 천국조 (본선)",
+      "prize": "우승 500,000원",
+      "rounds": [
+        {
+          "name": "1라운드 (16강)",
+          "deadline": "~ 5/31",
+          "matches": [
+            {
+              "id": "h16-1",
+              "teamA": "최성윤 & 김종천",
+              "teamB": "김대영 & 이성구",
+              "date": "4/24(금)",
+              "course": "골프존카운티 송도",
+              "winner": "B",
+              "bye": false,
+              "note": ""
+            },
+            {
+              "id": "h16-2",
+              "teamA": "신승우 & 김정택",
+              "teamB": "김은묵 & 이광호",
+              "date": "4/24(금)",
+              "course": "골프존카운티 송도",
+              "winner": "B",
+              "bye": false,
+              "note": ""
+            },
+            {
+              "id": "h16-3",
+              "teamA": "조성민 & 홍동훈",
+              "teamB": "박지훈75 & 심정수",
+              "date": "4/24(금)",
+              "course": "골프존카운티 송도",
+              "winner": "A",
+              "bye": false,
+              "note": ""
+            },
+            {
+              "id": "h16-4",
+              "teamA": "서지우 & 이재희",
+              "teamB": "정일성 & 이민형",
+              "date": "4/20(월)",
+              "course": "베어즈베스트청라",
+              "winner": "B",
+              "bye": false,
+              "note": ""
+            },
+            {
+              "id": "h16-5",
+              "teamA": "오성열 & 김길용",
+              "teamB": "성종훈 & 오대성",
+              "date": "4/8(수)",
+              "course": "클럽72",
+              "winner": "A",
+              "bye": false,
+              "note": ""
+            },
+            {
+              "id": "h16-6",
+              "teamA": "남기혁 & 임형준",
+              "teamB": "양희모 & 정우전",
+              "date": "4/7(화)",
+              "course": "베어즈베스트청라",
+              "winner": "A",
+              "bye": false,
+              "note": ""
+            },
+            {
+              "id": "h16-7",
+              "teamA": "오유근 & 문홍권",
+              "teamB": "서경석 & 장원영",
+              "date": "4/29(월)",
+              "course": "클럽72",
+              "winner": "A",
+              "bye": false,
+              "note": ""
+            },
+            {
+              "id": "h16-8",
+              "teamA": "배상필 & 김정규",
+              "teamB": "박지훈79 & 김용민",
+              "date": "",
+              "course": "",
+              "winner": "B",
+              "bye": false,
+              "note": ""
+            }
+          ]
+        },
+        {
+          "name": "8강",
+          "deadline": "~ 7/31",
+          "matches": [
+            {
+              "id": "h8-1",
+              "teamA": "박지훈79 & 김용민",
+              "teamB": "남기혁 & 임형준",
+              "date": "",
+              "course": "",
+              "winner": "",
+              "bye": false,
+              "note": ""
+            },
+            {
+              "id": "h8-2",
+              "teamA": "오성열 & 김길용",
+              "teamB": "김대영 & 이성구",
+              "date": "7/8(수)",
+              "course": "드림파크CC",
+              "winner": "",
+              "bye": false,
+              "note": ""
+            },
+            {
+              "id": "h8-3",
+              "teamA": "조성민 & 홍동훈",
+              "teamB": "서경석 & 장원영",
+              "date": "7/1(수)",
+              "course": "클럽72",
+              "winner": "B",
+              "bye": false,
+              "note": ""
+            },
+            {
+              "id": "h8-4",
+              "teamA": "김은묵 & 이광호",
+              "teamB": "정일성 & 이민형",
+              "date": "6/19(금)",
+              "course": "국제CC",
+              "winner": "B",
+              "bye": false,
+              "note": ""
+            }
+          ]
+        },
+        {
+          "name": "4강",
+          "deadline": "~ 9/30",
+          "matches": []
+        },
+        {
+          "name": "결승",
+          "deadline": "10월 월례회",
+          "matches": []
+        }
+      ]
+    },
+    {
+      "key": "hell",
+      "name": "🔥 지옥조 (패자부활)",
+      "prize": "우승 300,000원",
+      "rounds": [
+        {
+          "name": "8강",
+          "deadline": "~ 7/31",
+          "matches": [
+            {
+              "id": "d8-0",
+              "teamA": "오유근 & 문홍권",
+              "teamB": "",
+              "date": "",
+              "course": "",
+              "winner": "A",
+              "bye": true,
+              "note": "부전승"
+            },
+            {
+              "id": "d8-1",
+              "teamA": "이필선 & 김두환",
+              "teamB": "서지우 & 이재희",
+              "date": "",
+              "course": "",
+              "winner": "",
+              "bye": false,
+              "note": ""
+            },
+            {
+              "id": "d8-2",
+              "teamA": "양희모 & 정우전",
+              "teamB": "신승우 & 김정택",
+              "date": "6/25(목)",
+              "course": "베르힐CC",
+              "winner": "B",
+              "bye": false,
+              "note": ""
+            },
+            {
+              "id": "d8-3",
+              "teamA": "최성윤 & 김종천",
+              "teamB": "성종훈 & 오대성",
+              "date": "",
+              "course": "",
+              "winner": "",
+              "bye": false,
+              "note": ""
+            },
+            {
+              "id": "d8-4",
+              "teamA": "박지훈75 & 심정수",
+              "teamB": "배상필 & 김정규",
+              "date": "",
+              "course": "",
+              "winner": "",
+              "bye": false,
+              "note": ""
+            }
+          ]
+        },
+        {
+          "name": "4강",
+          "deadline": "~ 9/30",
+          "matches": []
+        },
+        {
+          "name": "결승",
+          "deadline": "10월 월례회",
+          "matches": []
+        }
+      ]
+    }
+  ],
+  "rules": [
+    "모든 경기는 월례회와 별도 일정으로 진행 (월례회 때 경기 병행 금지)",
+    "승리 팀은 천국조(본선), 패배 팀은 지옥조(패자부활)로 — 1라운드에서 져도 끝이 아닙니다!",
+    "무승부 시: ① 팀 스트로크 합산 승 → ② 백카운트 승",
+    "다음 라운드 대진은 각 조 추첨(Random)으로 결정",
+    "스페셜 룰 \"땅(DDang)\" 찬스: 지고 있는 팀만 사용 가능 (전/후반 각 1회, 티샷 전 선언)",
+    "조장은 일정·결과를 단톡방에 공유해 주세요"
+  ]
+}
