@@ -14,12 +14,13 @@ const GOLF_DATA_FILE = path.join(DATA_DIR, 'golf_data.json'); // 찬조/시상�
 const VOTE_DATA_FILE = path.join(DATA_DIR, 'vote_data.json'); // 투표
 const NOTICE_FILE    = path.join(DATA_DIR, 'notice.json');    // 공지사항
 const PAIR_FILE      = path.join(DATA_DIR, 'pair_data.json'); // 짝꿍대전 토너먼트
+const ALPENSIA_FILE  = path.join(DATA_DIR, 'alpensia.json');  // 8월 알펜시아 1박2일 (차량/숙소 배정)
 
 // 영속 볼륨에 데이터가 없으면 레포에 동봉된 시드 파일을 1회 복사 (기존 데이터 보존)
 if (DATA_DIR !== __dirname) {
     try {
         fs.mkdirSync(DATA_DIR, { recursive: true });
-        [['data.json', DATA_FILE], ['golf_data.json', GOLF_DATA_FILE], ['vote_data.json', VOTE_DATA_FILE], ['notice.json', NOTICE_FILE], ['pair_data.json', PAIR_FILE]].forEach(([seedName, target]) => {
+        [['data.json', DATA_FILE], ['golf_data.json', GOLF_DATA_FILE], ['vote_data.json', VOTE_DATA_FILE], ['notice.json', NOTICE_FILE], ['pair_data.json', PAIR_FILE], ['alpensia.json', ALPENSIA_FILE]].forEach(([seedName, target]) => {
             const seed = path.join(__dirname, seedName);
             if (!fs.existsSync(target) && fs.existsSync(seed)) {
                 fs.copyFileSync(seed, target);
@@ -176,10 +177,28 @@ app.post('/api/pair/save', (req, res) => {
     }
 });
 
+// --- 알펜시아 1박2일 API (차량/숙소 배정) ---
+app.get('/api/alpensia/load', (req, res) => {
+    try {
+        if (fs.existsSync(ALPENSIA_FILE)) res.send(fs.readFileSync(ALPENSIA_FILE, 'utf8'));
+        else res.send('{}');
+    } catch (e) { res.send('{}'); }
+});
+
+app.post('/api/alpensia/save', (req, res) => {
+    try {
+        saveWithBackup(ALPENSIA_FILE, req.body);
+        res.send('success');
+    } catch (e) {
+        console.error('저장 에러:', e);
+        res.status(500).send('저장 실패: ' + e.message);
+    }
+});
+
 // --- 백업 목록 조회 ---
 app.get('/api/backups/:type', (req, res) => {
     const type = req.params.type; // 'data' | 'golf_data' | 'vote_data'
-    if (!['data', 'golf_data', 'vote_data', 'notice', 'pair_data'].includes(type)) {
+    if (!['data', 'golf_data', 'vote_data', 'notice', 'pair_data', 'alpensia'].includes(type)) {
         return res.status(400).json({ error: '유효하지 않은 타입' });
     }
     try {
@@ -202,7 +221,7 @@ app.get('/api/backups/:type', (req, res) => {
 app.post('/api/backups/restore', (req, res) => {
     const { filename, type } = req.body; // type: 'data' | 'golf_data' | 'vote_data'
     if (!filename || !type) return res.status(400).json({ error: 'filename과 type 필요' });
-    if (!['data', 'golf_data', 'vote_data', 'notice', 'pair_data'].includes(type)) {
+    if (!['data', 'golf_data', 'vote_data', 'notice', 'pair_data', 'alpensia'].includes(type)) {
         return res.status(400).json({ error: '유효하지 않은 타입' });
     }
     // 경로 순회 방지
