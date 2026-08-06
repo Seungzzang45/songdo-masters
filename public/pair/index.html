@@ -253,7 +253,7 @@
             if (isWin) cls += ' winner';
             if (isLose) cls += ' loser';
             let badge = '';
-            if (isBye) badge = '<span class="bye-badge">부전승</span>';
+            if (isBye) badge = `<span class="bye-badge">${esc(m.note) || '부전승'}</span>`;
             else if (isWin) badge = '<span class="win-badge">승</span>';
             return `<div class="${cls}" onclick="clickTeam(${bi},${ri},${mi},'${side}')">
                 <span class="team-name">${esc(name) || '<span style="color:#ccc;">(미정)</span>'}</span>${badge}
