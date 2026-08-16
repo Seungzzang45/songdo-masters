@@ -124,21 +124,145 @@ app.post('/api/golf/save', (req, res) => {
 });
 
 // --- 투표 프로그램 API ---
+function readVoteData() {
+    try {
+        if (fs.existsSync(VOTE_DATA_FILE)) return JSON.parse(fs.readFileSync(VOTE_DATA_FILE, 'utf8'));
+    } catch (e) { console.error('vote read 실패:', e); }
+    return { polls: [] };
+}
+
 app.get('/api/vote/load', (req, res) => {
     try {
-        if (fs.existsSync(VOTE_DATA_FILE)) res.send(fs.readFileSync(VOTE_DATA_FILE, 'utf8'));
-        else res.send('{"polls":[]}');
+        const data = readVoteData();
+        // 만료된 투표 자동 마감 (KST 기준) — 클라이언트 전체저장 없이 서버에서 처리
+        const todayKST = new Date(Date.now() + 9 * 3600 * 1000).toISOString().slice(0, 10);
+        let changed = false;
+        (data.polls || []).forEach(p => {
+            if (p.status === 'active' && p.date && p.date < todayKST) { p.status = 'closed'; changed = true; }
+        });
+        if (changed) saveWithBackup(VOTE_DATA_FILE, data);
+        res.type('application/json').send(JSON.stringify(data));
     } catch (e) { res.send('{"polls":[]}'); }
 });
 
+// 전체 저장 — 동시 투표 유실 방지를 위해 덮어쓰지 않고 서버 데이터와 병합
+// (투표: 회원별 최신 timestamp 우선 / 댓글: 합집합 / 서버에만 있는 투표항목: 보존)
 app.post('/api/vote/save', (req, res) => {
     try {
-        saveWithBackup(VOTE_DATA_FILE, req.body);
+        const incoming = req.body && typeof req.body === 'object' ? req.body : { polls: [] };
+        incoming.polls = incoming.polls || [];
+        const current = readVoteData();
+        const curById = {};
+        (current.polls || []).forEach(p => { curById[p.id] = p; });
+
+        incoming.polls.forEach(p => {
+            const cur = curById[p.id];
+            if (!cur) return;
+            // 투표 병합: 회원별로 timestamp가 더 최신인 쪽 유지
+            const merged = Object.assign({}, p.votes || {});
+            Object.entries(cur.votes || {}).forEach(([name, v]) => {
+                const inc = merged[name];
+                if (!inc || (v.timestamp || 0) > (inc.timestamp || 0)) merged[name] = v;
+            });
+            p.votes = merged;
+            // 댓글 병합: timestamp+이름 기준 합집합
+            p.comments = p.comments || [];
+            const seen = new Set(p.comments.map(c => (c.timestamp || 0) + '|' + c.name));
+            (cur.comments || []).forEach(c => {
+                if (!seen.has((c.timestamp || 0) + '|' + c.name)) p.comments.push(c);
+            });
+            p.comments.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+        });
+        // 서버에만 있는 투표항목은 보존 (오래된 화면의 저장으로 새 투표가 지워지는 것 방지)
+        const incIds = new Set(incoming.polls.map(p => p.id));
+        (current.polls || []).forEach(p => { if (!incIds.has(p.id)) incoming.polls.push(p); });
+
+        saveWithBackup(VOTE_DATA_FILE, incoming);
         res.send('success');
     } catch (e) {
         console.error('저장 에러:', e);
         res.status(500).send('저장 실패: ' + e.message);
     }
+});
+
+// 투표 1건 등록/변경 — 서버가 최신 데이터에 병합하므로 동시 투표에 안전
+app.post('/api/vote/cast', (req, res) => {
+    try {
+        const { pollId, name, option, reason } = req.body || {};
+        if (!pollId || !name || option === undefined) return res.status(400).send('invalid');
+        const data = readVoteData();
+        const poll = (data.polls || []).find(p => p.id === pollId);
+        if (!poll) return res.status(404).send('poll not found');
+        if (!poll.votes) poll.votes = {};
+        poll.votes[name] = { option: option, reason: reason || '', timestamp: Date.now() };
+        saveWithBackup(VOTE_DATA_FILE, data);
+        res.send('success');
+    } catch (e) {
+        console.error('cast 에러:', e);
+        res.status(500).send('error');
+    }
+});
+
+// 투표 1건 취소 (관리자)
+app.post('/api/vote/uncast', (req, res) => {
+    try {
+        const { pollId, name } = req.body || {};
+        if (!pollId || !name) return res.status(400).send('invalid');
+        const data = readVoteData();
+        const poll = (data.polls || []).find(p => p.id === pollId);
+        if (!poll) return res.status(404).send('poll not found');
+        if (poll.votes) delete poll.votes[name];
+        saveWithBackup(VOTE_DATA_FILE, data);
+        res.send('success');
+    } catch (e) { res.status(500).send('error'); }
+});
+
+// 댓글 1건 추가
+app.post('/api/vote/comment', (req, res) => {
+    try {
+        const { pollId, name, text } = req.body || {};
+        if (!pollId || !name || !text) return res.status(400).send('invalid');
+        const data = readVoteData();
+        const poll = (data.polls || []).find(p => p.id === pollId);
+        if (!poll) return res.status(404).send('poll not found');
+        if (!poll.comments) poll.comments = [];
+        poll.comments.push({ name: name, text: text, timestamp: Date.now() });
+        saveWithBackup(VOTE_DATA_FILE, data);
+        res.send('success');
+    } catch (e) { res.status(500).send('error'); }
+});
+
+// 투표항목 생성/메타수정 (관리자) — 기존 항목의 투표·댓글은 서버 것을 보존
+app.post('/api/vote/poll-upsert', (req, res) => {
+    try {
+        const p = req.body && req.body.poll;
+        if (!p || !p.id) return res.status(400).send('invalid');
+        const data = readVoteData();
+        const cur = (data.polls || []).find(x => x.id === p.id);
+        if (cur) {
+            ['type', 'title', 'month', 'date', 'course', 'time', 'fee', 'teams', 'options', 'multiSelect', 'status'].forEach(k => {
+                if (p[k] !== undefined) cur[k] = p[k];
+            });
+        } else {
+            p.votes = p.votes || {};
+            p.comments = p.comments || [];
+            data.polls.push(p);
+        }
+        saveWithBackup(VOTE_DATA_FILE, data);
+        res.send('success');
+    } catch (e) { res.status(500).send('error'); }
+});
+
+// 투표항목 삭제 (관리자)
+app.post('/api/vote/poll-delete', (req, res) => {
+    try {
+        const { pollId } = req.body || {};
+        if (!pollId) return res.status(400).send('invalid');
+        const data = readVoteData();
+        data.polls = (data.polls || []).filter(p => p.id !== pollId);
+        saveWithBackup(VOTE_DATA_FILE, data);
+        res.send('success');
+    } catch (e) { res.status(500).send('error'); }
 });
 
 // --- 공지사항 API ---

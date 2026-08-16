@@ -44,8 +44,6 @@ async function loadData() {
         const res = await fetch('/api/vote/load');
         const data = await res.json();
         voteData = data.polls ? data : { polls: [] };
-        
-        checkAndCloseExpiredPolls();
         renderApp();
     } catch (e) {
         console.error('데이터 로드 실패:', e);
@@ -54,38 +52,19 @@ async function loadData() {
     }
 }
 
-async function saveData() {
+// 항목별 저장 API 호출 — 전체 덮어쓰기 대신 서버가 최신 데이터에 병합 (동시 투표 유실 방지)
+async function apiPost(path, payload) {
     try {
-        await fetch('/api/vote/save', {
+        const res = await fetch(path, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(voteData)
+            body: JSON.stringify(payload)
         });
-        return true;
+        return (await res.text()) === 'success';
     } catch (e) {
-        console.error('데이터 저장 실패:', e);
+        console.error('저장 실패:', e);
         return false;
     }
-}
-
-function checkAndCloseExpiredPolls() {
-    let changed = false;
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    voteData.polls.forEach(poll => {
-        if (poll.status === 'active') {
-            const pollDate = new Date(poll.date);
-            pollDate.setHours(0, 0, 0, 0);
-            
-            if (pollDate < today) {
-                poll.status = 'closed';
-                changed = true;
-            }
-        }
-    });
-
-    if (changed) saveData();
 }
 
 function renderApp() {
@@ -319,14 +298,14 @@ async function handleEditPoll(e) {
     const btn = e.target.querySelector('button[type="submit"]');
     btn.disabled = true;
 
-    if (await saveData()) {
+    if (await apiPost('/api/vote/poll-upsert', { poll: poll })) {
         closeModal('modal-edit');
         showToast('수정되었습니다.');
-        renderApp();
+        await loadData();
     } else {
         alert('저장에 실패했습니다.');
-        btn.disabled = false;
     }
+    btn.disabled = false;
 }
 
 function createVoterGroupsHTML(poll, isClosed) {
@@ -550,15 +529,9 @@ async function castVote(pollId, optionValue) {
         return;
     }
 
-    poll.votes[name] = {
-        option: optionValue,
-        reason: '',
-        timestamp: Date.now()
-    };
-
-    if (await saveData()) {
+    if (await apiPost('/api/vote/cast', { pollId: pollId, name: name, option: optionValue, reason: '' })) {
         showToast(`${optionValue} 투표되었습니다.`);
-        renderApp();
+        await loadData();
     } else {
         alert('저장에 실패했습니다.');
     }
@@ -587,22 +560,14 @@ async function submitVote(e, pollId) {
         selectedOption = checkedRadio.value;
     }
 
-    const reason = '';
-
-    poll.votes[name] = {
-        option: selectedOption,
-        reason: reason,
-        timestamp: Date.now()
-    };
-
     const btn = form.querySelector('button[type="submit"]');
     const originalText = btn.innerText;
     btn.innerText = '저장 중...';
     btn.disabled = true;
 
-    if (await saveData()) {
+    if (await apiPost('/api/vote/cast', { pollId: pollId, name: name, option: selectedOption, reason: '' })) {
         showToast('투표가 저장되었습니다!');
-        renderApp();
+        await loadData();
     } else {
         alert('저장에 실패했습니다.');
         btn.innerText = originalText;
@@ -755,46 +720,44 @@ async function handleCreatePoll(e) {
         votes: {}
     };
     
-    voteData.polls.push(newPoll);
-    
     const btn = e.target.querySelector('button[type="submit"]');
     btn.disabled = true;
-    
-    if (await saveData()) {
+
+    if (await apiPost('/api/vote/poll-upsert', { poll: newPoll })) {
         closeModal('modal-create');
         showToast('투표가 생성되었습니다!');
-        renderApp();
+        await loadData();
     } else {
         alert('생성에 실패했습니다.');
     }
-    
+
     btn.disabled = false;
 }
 
 async function forceClosePoll(id) {
     if (!confirm('투표를 강제로 마감하시겠습니까?')) return;
-    
+
     const poll = voteData.polls.find(p => p.id === id);
     if (poll) {
         poll.status = 'closed';
-        if (await saveData()) {
+        if (await apiPost('/api/vote/poll-upsert', { poll: poll })) {
             showToast('마감 처리되었습니다.');
-            renderApp();
+            await loadData();
         }
     }
 }
 
 async function deletePoll(id) {
     if (!confirm('정말 이 투표 내역을 삭제하시겠습니까?')) return;
-    
-    voteData.polls = voteData.polls.filter(p => p.id !== id);
-    if (await saveData()) {
+
+    if (await apiPost('/api/vote/poll-delete', { pollId: id })) {
         showToast('삭제되었습니다.');
+        await loadData();
         const closed = getClosedMonths();
         if (!closed.includes(parseInt(selectedMonth)) && closed.length > 0) {
             selectedMonth = closed[0].toString();
+            renderApp();
         }
-        renderApp();
     }
 }
 
@@ -805,29 +768,20 @@ async function submitComment(e, pollId) {
     const text = form.querySelector(`#comment-text-${pollId}`).value.trim();
     if (!text) return;
 
-    const poll = voteData.polls.find(p => p.id === pollId);
-    if (!poll) return;
-
-    if (!poll.comments) poll.comments = [];
-    poll.comments.push({ name, text, timestamp: Date.now() });
-
     const btn = form.querySelector('button[type="submit"]');
     btn.disabled = true;
-    if (await saveData()) {
+    if (await apiPost('/api/vote/comment', { pollId: pollId, name: name, text: text })) {
         showToast('댓글이 등록되었습니다.');
-        renderApp();
+        await loadData();
     } else {
         btn.disabled = false;
     }
 }
 
 async function deleteVote(pollId, memberName) {
-    const poll = voteData.polls.find(p => p.id === pollId);
-    if (!poll) return;
-    delete poll.votes[memberName];
-    if (await saveData()) {
+    if (await apiPost('/api/vote/uncast', { pollId: pollId, name: memberName })) {
         showToast(`${memberName}님의 투표가 취소되었습니다.`);
-        renderApp();
+        await loadData();
     }
 }
 
