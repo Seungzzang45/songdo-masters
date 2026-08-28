@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<!-- 송도마스터즈 회장기대회 — 핸디순 실시간 조편성, 당일 스트로크(출석 보정) 순위, 찬조 연동 상품 목록 -->
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>송도마스터즈 회장기대회</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #006747;
+            --gold: #c9a84c;
+            --gold-dark: #a07830;
+            --danger: #c0392b;
+            --bg: #eef2ee;
+            --text-main: #1a2e1a;
+            --text-muted: #6b8270;
+            --border: rgba(0, 103, 71, 0.14);
+        }
+        * { box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            background-image:
+                radial-gradient(ellipse at 20% 10%, rgba(0,103,71,0.07) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 90%, rgba(201,168,76,0.06) 0%, transparent 60%);
+            color: var(--text-main);
+            font-family: 'Noto Sans KR', sans-serif;
+            margin: 0;
+            min-height: 100vh;
+        }
+        .wrapper { max-width: 640px; margin: 0 auto; padding: 20px 14px; }
+        .header { text-align: center; padding: 8px 0 14px; position: relative; }
+        .header h1 { font-size: 1.4rem; font-weight: 900; margin: 0 0 6px; color: var(--primary); letter-spacing: -0.5px; }
+        .header h1 .gold { color: var(--gold); }
+        .subtitle { font-size: 0.78rem; color: var(--text-muted); margin: 0; }
+        .admin-btn { position: absolute; top: 0; right: 0; background: none; border: none; font-size: 20px; cursor: pointer; opacity: 0.55; }
+        .live-badge { font-size: 0.64rem; font-weight: 900; color: #fff; background: var(--primary); border-radius: 10px; padding: 2px 9px; vertical-align: 2px; margin-left: 6px; }
+
+        .card { background: #fff; border: 1px solid var(--border); border-radius: 14px;
+                box-shadow: 0 3px 14px rgba(0,103,71,0.08); padding: 15px 16px; margin-bottom: 14px; }
+        .card h2 { font-size: 0.98rem; font-weight: 900; color: var(--primary); margin: 0 0 10px; }
+        .card h2 .sub { font-size: 0.7rem; font-weight: 500; color: var(--text-muted); margin-left: 6px; }
+        .rules li { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 5px; line-height: 1.55; }
+
+        .group-card { border: 1.5px solid var(--border); border-radius: 12px; margin-bottom: 12px; overflow: hidden; }
+        .group-head { background: rgba(0,103,71,0.07); padding: 8px 12px; font-weight: 900; font-size: 0.9rem; color: var(--primary); }
+        table { width: 100%; border-collapse: collapse; font-size: 0.83rem; }
+        th { background: rgba(0,103,71,0.04); color: var(--text-muted); font-size: 0.68rem; padding: 5px 6px; text-align: center; font-weight: 700; }
+        td { padding: 7px 6px; border-top: 1px solid rgba(0,0,0,0.05); text-align: center; }
+        td.name { text-align: left; font-weight: 700; }
+        .hdcp { font-weight: 900; color: var(--primary); }
+        .score-cell { min-width: 44px; }
+        .admin .score-cell.editable { cursor: pointer; border-radius: 6px; }
+        .admin .score-cell.editable:hover { background: rgba(201,168,76,0.15); }
+        .score-empty { color: #c3ccc5; }
+        .rank-badge { display: inline-block; min-width: 22px; padding: 2px 5px; border-radius: 10px; font-size: 0.68rem; font-weight: 900; }
+        .rank-1 { background: var(--gold); color: #2c2208; }
+        .rank-2 { background: rgba(0,103,71,0.85); color: #fff; }
+        .rank-3 { background: rgba(0,103,71,0.45); color: #fff; }
+        .rank-4 { background: rgba(0,0,0,0.12); color: var(--text-muted); }
+
+        .pick-item { display: flex; align-items: center; gap: 10px; padding: 7px 4px; border-bottom: 1px dashed rgba(0,0,0,0.06); font-size: 0.86rem; }
+        .pick-no { flex: 0 0 26px; height: 26px; border-radius: 50%; background: var(--primary); color: #fff; font-weight: 900;
+                   display: flex; align-items: center; justify-content: center; font-size: 0.78rem; }
+        .pick-meta { font-size: 0.7rem; color: var(--text-muted); margin-left: auto; text-align: right; }
+
+        .prize-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 10px;
+                      background: #f7faf8; border: 1px solid var(--border); border-radius: 10px; margin-bottom: 7px; font-size: 0.85rem; }
+        .prize-item .from { font-size: 0.7rem; color: var(--gold-dark); font-weight: 800; }
+        .prize-del { background: none; border: none; color: var(--danger); font-size: 1rem; cursor: pointer; display: none; }
+        .admin .prize-del { display: block; }
+        .mini-btn { border: none; border-radius: 8px; padding: 8px 12px; font-size: 0.78rem; font-weight: 800; cursor: pointer; font-family: inherit;
+                    background: rgba(0,103,71,0.1); color: var(--primary); display: none; }
+        .admin .mini-btn { display: inline-block; }
+        .pending-note { font-size: 0.76rem; color: var(--gold-dark); background: rgba(201,168,76,0.1);
+                        border: 1px dashed rgba(201,168,76,0.5); border-radius: 10px; padding: 9px 12px; margin-top: 8px; }
+
+        .toast { position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%) translateY(120px); background: var(--primary); color: white;
+                 padding: 12px 26px; border-radius: 26px; font-weight: 700; transition: transform 0.3s; z-index: 10001; font-size: 0.9rem; }
+        .toast.show { transform: translateX(-50%) translateY(0); }
+    </style>
+</head>
+<body>
+    <div class="wrapper" id="page">
+        <header class="header">
+            <button id="admin-btn" class="admin-btn" onclick="toggleAdmin()">🔒</button>
+            <h1>🏆 송도마스터즈 <span class="gold">회장기대회</span></h1>
+            <p class="subtitle" id="event-label"></p>
+        </header>
+
+        <section class="card">
+            <h2>📜 대회 방식</h2>
+            <ul class="rules" style="margin:0; padding-left:18px;">
+                <li><b>조편성</b>: 핸디순으로 1조부터 배정 — 9·10월 정라 성적이 입력되면 <b>실시간 자동 반영</b>됩니다. 동타는 직전월 타수가 낮은 사람이 앞 순번.</li>
+                <li><b>순위</b>: 대회 당일 스트로크에서 <b>출석횟수 × 1타 감산</b>한 보정타수로 각 조 1~4등 결정.</li>
+                <li><b>상품 우선권</b>: 각 조 1등들 → 2등들 → 3등들 → 4등들 순. 같은 등수끼리는 <b>출석횟수 + 찬조횟수</b>가 많은 사람이 먼저.</li>
+                <li><b>상품</b>: 대회월 찬조상품 + 총무 등록 상품.</li>
+            </ul>
+        </section>
+
+        <section class="card">
+            <h2>🏌️ 조편성 <span class="live-badge">핸디순 실시간</span><span class="sub" id="participant-count"></span></h2>
+            <div id="groups"></div>
+            <div class="pending-note" id="score-hint" style="display:none;">✏️ 관리자 모드: 각 행의 <b>당일타수</b> 칸을 눌러 대회 당일 스코어를 입력하세요.</div>
+        </section>
+
+        <section class="card" id="pick-section" style="display:none;">
+            <h2>🎖️ 상품 선택 우선순위 <span class="sub">보정타수 = 당일타수 − 출석횟수</span></h2>
+            <div id="pick-list"></div>
+        </section>
+
+        <section class="card">
+            <h2>🎁 상품 목록 <span class="sub" id="prize-month-label"></span>
+                <button class="mini-btn" style="float:right;" onclick="addPrize()">+ 상품 추가</button>
+                <button class="mini-btn" style="float:right; margin-right:6px; background:rgba(201,168,76,0.2); color:var(--gold-dark);" onclick="changeMonth()">📅 대회월 변경</button>
+            </h2>
+            <div id="prize-list"></div>
+        </section>
+    </div>
+
+    <div id="toast" class="toast">저장되었습니다!</div>
+
+    <script>
+        let cup = { eventMonth: 11, eventLabel: '', scores: {}, extraPrizes: [] };
+        let joData = null, voteDataAll = null, golfData = null;
+        let isAdmin = false;
+        let participants = []; // 계산 결과 캐시
+
+        function esc(s) {
+            return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        }
+        function norm(n) {
+            // 찬조 명단의 "박지훈(75)" 표기 등을 회원명으로 정규화
+            return String(n || '').replace(/\s/g, '').replace('(75)', '75').replace('(79)', '79');
+        }
+
+        async function loadAll() {
+            const [jo, vote, golf, cupData] = await Promise.all([
+                fetch('/api/load').then(r => r.json()).catch(() => ({})),
+                fetch('/api/vote/load').then(r => r.json()).catch(() => ({ polls: [] })),
+                fetch('/api/golf/load').then(r => r.json()).catch(() => ({})),
+                fetch('/api/cup/load').then(r => r.json()).catch(() => ({}))
+            ]);
+            joData = jo; voteDataAll = vote; golfData = golf;
+            if (cupData && cupData.eventMonth) cup = cupData;
+            if (!cup.scores) cup.scores = {};
+            if (!cup.extraPrizes) cup.extraPrizes = [];
+            compute();
+            renderAll();
+        }
+
+        async function saveCup() {
+            try {
+                const res = await fetch('/api/cup/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(cup)
+                });
+                if ((await res.text()) === 'success') { showToast('저장되었습니다!'); return true; }
+            } catch (e) {}
+            alert('저장에 실패했습니다.');
+            return false;
+        }
+
+        // ── 실시간 계산: 핸디·직전월·출석·찬조 ──
+        function compute() {
+            const pd = (joData && joData.playerData) || {};
+            // 출석 월 집합: 성적 기록 월 ∪ 투표 '참석' 월
+            const attMonths = {};
+            Object.entries(pd).forEach(([name, p]) => {
+                attMonths[name] = new Set();
+                Object.entries(p.scores || {}).forEach(([m, s]) => {
+                    if (s !== '' && s !== null && s !== undefined) attMonths[name].add(parseInt(m));
+                });
+            });
+            (voteDataAll.polls || []).forEach(poll => {
+                Object.entries(poll.votes || {}).forEach(([name, v]) => {
+                    const opts = Array.isArray(v.option) ? v.option : [v.option];
+                    const attended = opts.some(o => String(o).includes('참석') && !String(o).includes('불참'));
+                    if (attended && pd[name]) {
+                        if (!attMonths[name]) attMonths[name] = new Set();
+                        attMonths[name].add(poll.month);
+                    }
+                });
+            });
+            // 찬조 횟수 (전체 월)
+            const sponsorCnt = {};
+            Object.values(golfData || {}).forEach(m => {
+                (m.sponsors || []).forEach(s => {
+                    const n = norm(s.name);
+                    sponsorCnt[n] = (sponsorCnt[n] || 0) + 1;
+                });
+            });
+
+            participants = [];
+            Object.entries(pd).forEach(([name, p]) => {
+                const scores = {};
+                let sum = 0, cnt = 0;
+                Object.entries(p.scores || {}).forEach(([m, s]) => {
+                    if (s !== '' && s !== null && s !== undefined) {
+                        scores[parseInt(m)] = parseInt(s);
+                        sum += parseInt(s); cnt++;
+                    }
+                });
+                if (!cnt) return; // 성적 없는 회원은 조편성 제외
+                const hdcp = Math.round(sum / cnt - 72);
+                let lastMonth = 0;
+                for (let m = 11; m >= 3; m--) { if (scores[m] !== undefined) { lastMonth = m; break; } }
+                participants.push({
+                    name, hdcp, scores,
+                    lastMonth, lastScore: scores[lastMonth],
+                    att: (attMonths[name] || new Set()).size,
+                    spon: sponsorCnt[norm(name)] || 0
+                });
+            });
+            // 핸디순 정렬, 동타는 최근 월부터 타수 비교 (기록 없으면 뒤로)
+            participants.sort((a, b) => {
+                if (a.hdcp !== b.hdcp) return a.hdcp - b.hdcp;
+                for (let m = 11; m >= 3; m--) {
+                    const sa = a.scores[m] !== undefined ? a.scores[m] : 999;
+                    const sb = b.scores[m] !== undefined ? b.scores[m] : 999;
+                    if (sa !== sb) return sa - sb;
+                }
+                return a.name.localeCompare(b.name, 'ko');
+            });
+        }
+
+        // 조별 순위 계산: 보정 = 당일타수 − 출석, 동타는 출석+찬조 많은 순
+        function groupRanks(group) {
+            const played = group.filter(p => cup.scores[p.name] !== undefined && cup.scores[p.name] !== '');
+            played.forEach(p => { p.day = parseInt(cup.scores[p.name]); p.adj = p.day - p.att; });
+            played.sort((a, b) => a.adj - b.adj || (b.att + b.spon) - (a.att + a.spon) || a.name.localeCompare(b.name, 'ko'));
+            const ranks = {};
+            played.forEach((p, i) => { ranks[p.name] = i + 1; });
+            return ranks;
+        }
+
+        function renderAll() {
+            document.getElementById('page').className = 'wrapper' + (isAdmin ? ' admin' : '');
+            document.getElementById('event-label').innerText = cup.eventLabel || (cup.eventMonth + '월 정기라운딩');
+            document.getElementById('participant-count').innerText = '참가 ' + participants.length + '명 · ' + Math.ceil(participants.length / 4) + '개조';
+            document.getElementById('score-hint').style.display = isAdmin ? 'block' : 'none';
+
+            // 조편성
+            const cont = document.getElementById('groups');
+            cont.innerHTML = '';
+            const groups = [];
+            for (let i = 0; i < participants.length; i += 4) groups.push(participants.slice(i, i + 4));
+            groups.forEach((g, gi) => {
+                const ranks = groupRanks(g);
+                const div = document.createElement('div');
+                div.className = 'group-card';
+                let rows = '';
+                g.forEach(p => {
+                    const sc = cup.scores[p.name];
+                    const hasScore = sc !== undefined && sc !== '';
+                    const rank = ranks[p.name];
+                    const adj = hasScore ? (parseInt(sc) - p.att) : null;
+                    rows += `<tr>
+                        <td class="name">${esc(p.name)} ${rank ? `<span class="rank-badge rank-${Math.min(rank,4)}">${rank}등</span>` : ''}</td>
+                        <td class="hdcp">${p.hdcp}</td>
+                        <td>${p.lastScore !== undefined ? p.lastScore + '<span style="font-size:0.62rem;color:var(--text-muted);">(' + p.lastMonth + '월)</span>' : '-'}</td>
+                        <td>${p.att}</td>
+                        <td>${p.spon}</td>
+                        <td class="score-cell editable" onclick="editScore('${esc(p.name)}')">${hasScore ? '<b>' + sc + '</b>' : '<span class="score-empty">입력</span>'}</td>
+                        <td>${adj !== null ? '<b style="color:var(--primary);">' + adj + '</b>' : '-'}</td>
+                    </tr>`;
+                });
+                div.innerHTML = `<div class="group-head">${gi + 1}조</div>
+                    <table>
+                        <tr><th style="text-align:left;">이름</th><th>핸디</th><th>직전월</th><th>출석</th><th>찬조</th><th>당일타수</th><th>보정</th></tr>
+                        ${rows}
+                    </table>`;
+                cont.appendChild(div);
+            });
+
+            renderPickOrder(groups);
+            renderPrizes();
+        }
+
+        // 전체 상품 선택 순서: 각조 1등들 → 2등들 → ..., 같은 등수는 출석+찬조 desc
+        function renderPickOrder(groups) {
+            const all = [];
+            groups.forEach((g, gi) => {
+                const ranks = groupRanks(g);
+                g.forEach(p => {
+                    if (ranks[p.name]) all.push({ ...p, rank: ranks[p.name], group: gi + 1, adj: parseInt(cup.scores[p.name]) - p.att });
+                });
+            });
+            const sec = document.getElementById('pick-section');
+            if (!all.length) { sec.style.display = 'none'; return; }
+            sec.style.display = 'block';
+            all.sort((a, b) => a.rank - b.rank || (b.att + b.spon) - (a.att + a.spon) || a.adj - b.adj || a.name.localeCompare(b.name, 'ko'));
+            document.getElementById('pick-list').innerHTML = all.map((p, i) => `
+                <div class="pick-item">
+                    <span class="pick-no">${i + 1}</span>
+                    <span><b>${esc(p.name)}</b> <span style="font-size:0.7rem;color:var(--text-muted);">(${p.group}조 ${p.rank}등)</span></span>
+                    <span class="pick-meta">보정 ${p.adj} · 출석${p.att}+찬조${p.spon}=${p.att + p.spon}</span>
+                </div>`).join('');
+        }
+
+        function renderPrizes() {
+            const m = cup.eventMonth;
+            document.getElementById('prize-month-label').innerText = m + '월 찬조 연동';
+            const sponsors = ((golfData || {})[m] || {}).sponsors || [];
+            let html = '';
+            sponsors.forEach(s => {
+                html += `<div class="prize-item"><span>${esc(s.item)}</span><span class="from">🤝 ${esc(s.name)} 찬조</span></div>`;
+            });
+            (cup.extraPrizes || []).forEach(p => {
+                html += `<div class="prize-item"><span>${esc(p.item)}</span>
+                    <span style="display:flex;align-items:center;gap:8px;"><span class="from" style="color:var(--primary);">총무 등록</span>
+                    <button class="prize-del" onclick="delPrize(${p.id})">×</button></span></div>`;
+            });
+            if (!html) html = '<div style="color:var(--text-muted);font-size:0.82rem;padding:6px 0;">등록된 상품이 없습니다. 대회월 찬조가 등록되면 자동으로 표시됩니다.</div>';
+            document.getElementById('prize-list').innerHTML = html;
+        }
+
+        // ── 관리자 동작 ──
+        async function editScore(name) {
+            if (!isAdmin) return;
+            const cur = cup.scores[name] !== undefined ? cup.scores[name] : '';
+            const val = prompt(`${name} 대회 당일 타수 입력 (비우면 삭제)`, cur);
+            if (val === null) return;
+            const t = val.trim();
+            if (t === '') delete cup.scores[name];
+            else if (!/^\d{2,3}$/.test(t)) { alert('타수는 숫자로 입력하세요. (예: 92)'); return; }
+            else cup.scores[name] = parseInt(t);
+            renderAll();
+            await saveCup();
+        }
+
+        async function addPrize() {
+            if (!isAdmin) return;
+            const item = prompt('상품명을 입력하세요.');
+            if (!item || !item.trim()) return;
+            cup.extraPrizes.push({ id: Date.now(), item: item.trim() });
+            renderAll();
+            await saveCup();
+        }
+
+        async function delPrize(id) {
+            if (!isAdmin) return;
+            if (!confirm('이 상품을 삭제할까요?')) return;
+            cup.extraPrizes = cup.extraPrizes.filter(p => p.id !== id);
+            renderAll();
+            await saveCup();
+        }
+
+        async function changeMonth() {
+            if (!isAdmin) return;
+            const val = prompt('대회월을 입력하세요 (3~11). 상품 목록이 해당 월 찬조와 연동됩니다.', cup.eventMonth);
+            if (val === null) return;
+            const m = parseInt(val);
+            if (!(m >= 3 && m <= 11)) { alert('3~11 사이 숫자를 입력하세요.'); return; }
+            cup.eventMonth = m;
+            const label = prompt('대회 표시 문구 (예: 11월 정기라운딩 (11/4 수))', cup.eventLabel || (m + '월 정기라운딩'));
+            if (label !== null) cup.eventLabel = label.trim();
+            renderAll();
+            await saveCup();
+        }
+
+        function toggleAdmin() {
+            if (isAdmin) { isAdmin = false; }
+            else {
+                const pwd = prompt('총무(관리자) 비밀번호를 입력하세요.');
+                if (pwd === '1234') isAdmin = true;
+                else if (pwd !== null) { alert('비밀번호가 틀렸습니다.'); return; }
+                else return;
+            }
+            document.getElementById('admin-btn').innerText = isAdmin ? '🔓' : '🔒';
+            renderAll();
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.innerText = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 2000);
+        }
+
+        loadAll();
+    </script>
+    <script src="/nav.js"></script>
+</body>
+</html>
