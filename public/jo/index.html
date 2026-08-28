@@ -812,8 +812,10 @@
     memberList.forEach(name => {
       let data = playerData[name] || { scores:{}, hdcp:28 };
       let scoreCells = "";
+      let hasAnyScore = false;
       for(let m=3; m<=11; m++) {
           let s = data.scores[m] || "";
+          if(s !== "") hasAnyScore = true;
           if(MODE === 'admin') scoreCells += `<td><input type="number" class="score-input" value="${s}" onchange="updateScore('${name}', ${m}, this.value)"></td>`;
           else scoreCells += `<td>${s}</td>`;
       }
@@ -821,7 +823,8 @@
       if(MODE === 'admin') {
           html += `<tr><td>${name}</td>${scoreCells}<td><input type="number" class="score-input hdcp-input" value="${data.hdcp}" onchange="updateHandicap('${name}', this.value)"></td></tr>`;
       } else {
-          html += `<tr><td>${name}</td>${scoreCells}<td style="color:#d32f2f; font-weight:bold;">${data.hdcp}</td></tr>`;
+          // 성적 기록이 없는 회원은 기본값(28) 대신 '-' 표시
+          html += `<tr><td>${name}</td>${scoreCells}<td style="color:#d32f2f; font-weight:bold;">${hasAnyScore ? data.hdcp : '-'}</td></tr>`;
       }
     });
     tbody.innerHTML = html;
