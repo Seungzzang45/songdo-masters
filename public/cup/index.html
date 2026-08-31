@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 송도마스터즈 회장기대회 — 핸디순 실시간 조편성, 당일 스트로크(출석 보정) 순위, 찬조 연동 상품 목록 -->
+<!-- 송도마스터즈 회장기대회 — 핸디순 실시간 조편성, 당일 스트로크 순위, 찬조 연동 상품 목록 -->
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
@@ -92,7 +92,7 @@
             <h2>📜 대회 방식</h2>
             <ul class="rules" style="margin:0; padding-left:18px;">
                 <li><b>조편성</b>: 평균타수(핸디)순으로 1조부터 배정 — 9·10월 정라 성적이 입력되면 <b>실시간 자동 반영</b>됩니다. 평균타수가 같으면 직전월 타수가 낮은 사람이 앞 순번.</li>
-                <li><b>순위</b>: 대회 당일 스트로크에서 <b>출석횟수 × 1타 감산</b>한 보정타수로 각 조 1~4등 결정.</li>
+                <li><b>순위</b>: 대회 당일 <b>스트로크 그대로</b> 각 조 1~4등 결정. (동타 시 출석횟수 + 찬조횟수가 많은 사람이 상위)</li>
                 <li><b>상품 우선권</b>: 각 조 1등들 → 2등들 → 3등들 → 4등들 순. 같은 등수끼리는 <b>출석횟수 + 찬조횟수</b>가 많은 사람이 먼저.</li>
                 <li><b>상품</b>: 대회월 찬조상품 + 총무 등록 상품.</li>
             </ul>
@@ -107,7 +107,7 @@
         </section>
 
         <section class="card" id="pick-section" style="display:none;">
-            <h2>🎖️ 상품 선택 우선순위 <span class="sub">보정타수 = 당일타수 − 출석횟수</span></h2>
+            <h2>🎖️ 상품 선택 우선순위 <span class="sub">각 조 등수 → 출석 + 찬조 많은 순</span></h2>
             <div id="pick-list"></div>
         </section>
 
@@ -235,11 +235,11 @@
             });
         }
 
-        // 조별 순위 계산: 보정 = 당일타수 − 출석, 동타는 출석+찬조 많은 순
+        // 조별 순위 계산: 당일 스트로크 그대로, 동타는 출석+찬조 많은 순
         function groupRanks(group) {
             const played = group.filter(p => cup.scores[p.name] !== undefined && cup.scores[p.name] !== '');
-            played.forEach(p => { p.day = parseInt(cup.scores[p.name]); p.adj = p.day - p.att; });
-            played.sort((a, b) => a.adj - b.adj || (b.att + b.spon) - (a.att + a.spon) || a.name.localeCompare(b.name, 'ko'));
+            played.forEach(p => { p.day = parseInt(cup.scores[p.name]); });
+            played.sort((a, b) => a.day - b.day || (b.att + b.spon) - (a.att + a.spon) || a.name.localeCompare(b.name, 'ko'));
             const ranks = {};
             played.forEach((p, i) => { ranks[p.name] = i + 1; });
             return ranks;
@@ -265,7 +265,6 @@
                     const sc = cup.scores[p.name];
                     const hasScore = sc !== undefined && sc !== '';
                     const rank = ranks[p.name];
-                    const adj = hasScore ? (parseInt(sc) - p.att) : null;
                     const avgTxt = p.fixed ? '고정' : (Math.round(p.avg * 10) / 10).toFixed(1);
                     rows += `<tr>
                         <td class="name">${isAdmin ? `<button onclick="toggleExclude('${esc(p.name)}')" title="참가 제외" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:0.8rem;padding:0 4px 0 0;">✖</button>` : ''}${esc(p.name)} ${rank ? `<span class="rank-badge rank-${Math.min(rank,4)}">${rank}등</span>` : ''}</td>
@@ -273,13 +272,12 @@
                         <td>${p.lastScore !== undefined ? p.lastScore + '<span style="font-size:0.62rem;color:var(--text-muted);">(' + p.lastMonth + '월)</span>' : '-'}</td>
                         <td>${p.att}</td>
                         <td>${p.spon}</td>
-                        <td class="score-cell editable" onclick="editScore('${esc(p.name)}')">${hasScore ? '<b>' + sc + '</b>' : '<span class="score-empty">입력</span>'}</td>
-                        <td>${adj !== null ? '<b style="color:var(--primary);">' + adj + '</b>' : '-'}</td>
+                        <td class="score-cell editable" onclick="editScore('${esc(p.name)}')">${hasScore ? '<b style="color:var(--primary);">' + sc + '</b>' : '<span class="score-empty">입력</span>'}</td>
                     </tr>`;
                 });
                 div.innerHTML = `<div class="group-head">${gi + 1}조</div>
                     <table>
-                        <tr><th style="text-align:left;">이름</th><th>핸디<div style="font-weight:400;">(평균)</div></th><th>직전월</th><th>출석</th><th>찬조</th><th>당일타수</th><th>보정</th></tr>
+                        <tr><th style="text-align:left;">이름</th><th>핸디<div style="font-weight:400;">(평균)</div></th><th>직전월</th><th>출석</th><th>찬조</th><th>당일타수</th></tr>
                         ${rows}
                     </table>`;
                 cont.appendChild(div);
@@ -305,18 +303,18 @@
             groups.forEach((g, gi) => {
                 const ranks = groupRanks(g);
                 g.forEach(p => {
-                    if (ranks[p.name]) all.push({ ...p, rank: ranks[p.name], group: gi + 1, adj: parseInt(cup.scores[p.name]) - p.att });
+                    if (ranks[p.name]) all.push({ ...p, rank: ranks[p.name], group: gi + 1, day: parseInt(cup.scores[p.name]) });
                 });
             });
             const sec = document.getElementById('pick-section');
             if (!all.length) { sec.style.display = 'none'; return; }
             sec.style.display = 'block';
-            all.sort((a, b) => a.rank - b.rank || (b.att + b.spon) - (a.att + a.spon) || a.adj - b.adj || a.name.localeCompare(b.name, 'ko'));
+            all.sort((a, b) => a.rank - b.rank || (b.att + b.spon) - (a.att + a.spon) || a.day - b.day || a.name.localeCompare(b.name, 'ko'));
             document.getElementById('pick-list').innerHTML = all.map((p, i) => `
                 <div class="pick-item">
                     <span class="pick-no">${i + 1}</span>
                     <span><b>${esc(p.name)}</b> <span style="font-size:0.7rem;color:var(--text-muted);">(${p.group}조 ${p.rank}등)</span></span>
-                    <span class="pick-meta">보정 ${p.adj} · 출석${p.att}+찬조${p.spon}=${p.att + p.spon}</span>
+                    <span class="pick-meta">${p.day}타 · 출석${p.att}+찬조${p.spon}=${p.att + p.spon}</span>
                 </div>`).join('');
         }
 
