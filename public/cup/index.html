@@ -92,6 +92,7 @@
             <h2>📜 대회 방식</h2>
             <ul class="rules" style="margin:0; padding-left:18px;">
                 <li><b>조편성</b>: 평균타수(핸디)순으로 1조부터 배정 — 9·10월 정라 성적이 입력되면 <b>실시간 자동 반영</b>됩니다. 평균타수가 같으면 직전월 타수가 낮은 사람이 앞 순번.</li>
+                <li><b>8월(알펜시아)</b>은 이벤트성 라운딩이라 <b>평균타수 계산에서 제외</b>됩니다. (출석횟수에는 포함)</li>
                 <li><b>순위</b>: 대회 당일 <b>스트로크 그대로</b> 각 조 1~4등 결정. (동타 시 출석횟수 + 찬조횟수가 많은 사람이 상위)</li>
                 <li><b>상품 우선권</b>: 각 조 1등들 → 2등들 → 3등들 → 4등들 순. 같은 등수끼리는 <b>출석횟수 + 찬조횟수</b>가 많은 사람이 먼저. <span style="font-size:0.8em;color:var(--text-muted);">(출석·찬조 모두 <b>월 1회</b>로 집계 — 한 달에 여러 건 찬조해도 1회)</span></li>
                 <li><b>상품</b>: 대회월 찬조상품 + 총무 등록 상품.</li>
@@ -127,6 +128,9 @@
         let joData = null, voteDataAll = null, golfData = null;
         let isAdmin = false;
         let participants = []; // 계산 결과 캐시
+
+        // 8월은 이벤트성 라운딩이라 핸디(평균타수) 계산에서 제외
+        const EXCLUDED_SCORE_MONTHS = [8];
 
         function esc(s) {
             return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -207,8 +211,9 @@
                 const scores = {};
                 let sum = 0, cnt = 0;
                 Object.entries(p.scores || {}).forEach(([m, s]) => {
-                    if (s !== '' && s !== null && s !== undefined) {
-                        scores[parseInt(m)] = parseInt(s);
+                    const mm = parseInt(m);
+                    if (s !== '' && s !== null && s !== undefined && !EXCLUDED_SCORE_MONTHS.includes(mm)) {
+                        scores[mm] = parseInt(s);
                         sum += parseInt(s); cnt++;
                     }
                 });
