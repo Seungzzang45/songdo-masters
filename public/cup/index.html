@@ -93,7 +93,7 @@
             <ul class="rules" style="margin:0; padding-left:18px;">
                 <li><b>조편성</b>: 평균타수(핸디)순으로 1조부터 배정 — 9·10월 정라 성적이 입력되면 <b>실시간 자동 반영</b>됩니다. 평균타수가 같으면 직전월 타수가 낮은 사람이 앞 순번.</li>
                 <li><b>순위</b>: 대회 당일 <b>스트로크 그대로</b> 각 조 1~4등 결정. (동타 시 출석횟수 + 찬조횟수가 많은 사람이 상위)</li>
-                <li><b>상품 우선권</b>: 각 조 1등들 → 2등들 → 3등들 → 4등들 순. 같은 등수끼리는 <b>출석횟수 + 찬조횟수</b>가 많은 사람이 먼저.</li>
+                <li><b>상품 우선권</b>: 각 조 1등들 → 2등들 → 3등들 → 4등들 순. 같은 등수끼리는 <b>출석횟수 + 찬조횟수</b>가 많은 사람이 먼저. <span style="font-size:0.8em;color:var(--text-muted);">(출석·찬조 모두 <b>월 1회</b>로 집계 — 한 달에 여러 건 찬조해도 1회)</span></li>
                 <li><b>상품</b>: 대회월 찬조상품 + 총무 등록 상품.</li>
             </ul>
         </section>
@@ -187,14 +187,16 @@
                     }
                 });
             });
-            // 찬조 횟수 (전체 월)
-            const sponsorCnt = {};
-            Object.values(golfData || {}).forEach(m => {
-                (m.sponsors || []).forEach(s => {
+            // 찬조 횟수 — 사람·월 기준(한 달에 여러 건을 내도 1회로 집계)
+            const sponMonths = {};
+            Object.keys(golfData || {}).forEach(mk => {
+                ((golfData[mk] || {}).sponsors || []).forEach(s => {
                     const n = norm(s.name);
-                    sponsorCnt[n] = (sponsorCnt[n] || 0) + 1;
+                    (sponMonths[n] = sponMonths[n] || new Set()).add(String(mk));
                 });
             });
+            const sponsorCnt = {};
+            Object.keys(sponMonths).forEach(n => { sponsorCnt[n] = sponMonths[n].size; });
 
             const excluded = new Set(cup.excluded || []);
             const overrides = cup.hdcpOverride || {};
