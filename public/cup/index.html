@@ -101,10 +101,10 @@
 
         <section class="card">
             <h2>🏌️ 조편성 <span class="live-badge">핸디순 실시간</span><span class="sub" id="participant-count"></span>
-                <button class="mini-btn" style="float:right;" onclick="addFixedMember()">📌 고정핸디 참가 추가</button>
+                <button class="mini-btn" style="float:right;" onclick="addFixedMember()">➕ 참가자 추가</button>
             </h2>
             <div id="groups"></div>
-            <div class="pending-note" id="score-hint" style="display:none;">✏️ 관리자 모드: <b>당일타수</b> 칸 클릭=스코어 입력 · <b>핸디</b> 칸 클릭=핸디 고정 · 이름 앞 ✖=참가 제외</div>
+            <div class="pending-note" id="score-hint" style="display:none;">✏️ 관리자 모드: <b>당일타수</b> 칸 클릭=스코어 입력 · <b>핸디</b> 칸 클릭=핸디 고정(비우면 자동/미정) · 이름 앞 ✖=참가 제외</div>
         </section>
 
         <section class="card" id="pick-section" style="display:none;">
@@ -153,6 +153,7 @@
             if (!cup.extraPrizes) cup.extraPrizes = [];
             if (!cup.excluded) cup.excluded = [];
             if (!cup.hdcpOverride) cup.hdcpOverride = {};
+            if (!cup.pending) cup.pending = [];
             compute();
             renderAll();
         }
@@ -204,6 +205,9 @@
 
             const excluded = new Set(cup.excluded || []);
             const overrides = cup.hdcpOverride || {};
+            const pendingList = (cup.pending || []).filter(n => !excluded.has(n));
+            const pendingIdx = {};
+            pendingList.forEach((n, i) => { pendingIdx[n] = i; });
 
             participants = [];
             Object.entries(pd).forEach(([name, p]) => {
@@ -218,20 +222,34 @@
                     }
                 });
                 const hasOverride = overrides[name] !== undefined;
+                const isPending = pendingIdx[name] !== undefined;
+                // 핸디 미정 참가자: 성적이 입력되면 자동으로 정상 계산으로 전환
+                if (!cnt && isPending && !hasOverride) {
+                    participants.push({
+                        name, hdcp: null, avg: null, scores, fixed: false, pending: true,
+                        pendingOrder: pendingIdx[name],
+                        lastMonth: 0, lastScore: undefined,
+                        att: (attMonths[name] || new Set()).size,
+                        spon: sponsorCnt[norm(name)] || 0
+                    });
+                    return;
+                }
                 if (!cnt && !hasOverride) return; // 성적도 고정핸디도 없는 회원은 제외
                 const avg = hasOverride ? parseInt(overrides[name]) + 72 : sum / cnt;
                 const hdcp = hasOverride ? parseInt(overrides[name]) : Math.round(sum / cnt - 72);
                 let lastMonth = 0;
                 for (let m = 11; m >= 3; m--) { if (scores[m] !== undefined) { lastMonth = m; break; } }
                 participants.push({
-                    name, hdcp, avg, scores, fixed: hasOverride,
+                    name, hdcp, avg, scores, fixed: hasOverride, pending: false,
                     lastMonth, lastScore: scores[lastMonth],
                     att: (attMonths[name] || new Set()).size,
                     spon: sponsorCnt[norm(name)] || 0
                 });
             });
-            // 평균타수(반올림 전) 순 정렬 — 평균이 같으면 최근 월부터 타수 비교 (기록 없으면 뒤로)
+            // 평균타수(반올림 전) 순 정렬 — 핸디 미정 참가자는 항상 맨 뒤(마지막 조)
             participants.sort((a, b) => {
+                if (a.pending !== b.pending) return a.pending ? 1 : -1;
+                if (a.pending && b.pending) return a.pendingOrder - b.pendingOrder;
                 if (a.avg !== b.avg) return a.avg - b.avg;
                 for (let m = 11; m >= 3; m--) {
                     const sa = a.scores[m] !== undefined ? a.scores[m] : 999;
@@ -272,10 +290,10 @@
                     const sc = cup.scores[p.name];
                     const hasScore = sc !== undefined && sc !== '';
                     const rank = ranks[p.name];
-                    const avgTxt = p.fixed ? '고정' : (Math.round(p.avg * 10) / 10).toFixed(1);
+                    const avgTxt = p.pending ? '미정' : (p.fixed ? '고정' : (Math.round(p.avg * 10) / 10).toFixed(1));
                     rows += `<tr>
                         <td class="name">${isAdmin ? `<button onclick="toggleExclude('${esc(p.name)}')" title="참가 제외" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:0.8rem;padding:0 4px 0 0;">✖</button>` : ''}${esc(p.name)} ${rank ? `<span class="rank-badge rank-${Math.min(rank,4)}">${rank}등</span>` : ''}</td>
-                        <td class="hdcp score-cell editable" onclick="editHdcp('${esc(p.name)}')">${p.hdcp}${p.fixed ? '📌' : ''}<div style="font-size:0.6rem;color:var(--text-muted);font-weight:400;">${avgTxt}</div></td>
+                        <td class="hdcp score-cell editable" onclick="editHdcp('${esc(p.name)}')">${p.pending ? '<span style="color:var(--text-muted);font-weight:400;">-</span>' : p.hdcp + (p.fixed ? '📌' : '')}<div style="font-size:0.6rem;color:var(--text-muted);font-weight:400;">${avgTxt}</div></td>
                         <td>${p.lastScore !== undefined ? p.lastScore + '<span style="font-size:0.62rem;color:var(--text-muted);">(' + p.lastMonth + '월)</span>' : '-'}</td>
                         <td>${p.att}</td>
                         <td>${p.spon}</td>
@@ -365,40 +383,49 @@
             } else {
                 if (!confirm(`${name}님을 회장기 조편성에서 제외할까요?`)) return;
                 cup.excluded.push(name);
+                cup.pending = (cup.pending || []).filter(n => n !== name);
             }
             compute();
             renderAll();
             await saveCup();
         }
 
-        // 핸디 고정/해제 (총무) — 성적 없는 회원도 고정 핸디로 참가 가능
+        // 핸디 고정/해제 (총무) — 비우면 자동 계산, 성적 없는 회원은 '핸디 미정'으로 유지
         async function editHdcp(name) {
             if (!isAdmin) return;
             const cur = (cup.hdcpOverride || {})[name];
-            const val = prompt(`${name} 고정 핸디 입력 (비우면 자동 계산으로 복원)`, cur !== undefined ? cur : '');
+            const val = prompt(`${name} 고정 핸디 입력 (비우면 자동 계산 / 성적 없으면 핸디 미정)`, cur !== undefined ? cur : '');
             if (val === null) return;
             const t = val.trim();
             cup.hdcpOverride = cup.hdcpOverride || {};
             if (t === '') delete cup.hdcpOverride[name];
             else if (!/^\d{1,2}$/.test(t)) { alert('핸디는 숫자로 입력하세요. (예: 28)'); return; }
-            else cup.hdcpOverride[name] = parseInt(t);
+            else { cup.hdcpOverride[name] = parseInt(t); cup.pending = (cup.pending || []).filter(x => x !== name); }
             compute();
             renderAll();
             await saveCup();
         }
 
-        // 성적 없는 회원을 고정 핸디로 참가시키기 (총무)
+        // 성적 없는 회원 참가시키기 (총무) — 핸디를 비우면 '핸디 미정'으로 마지막 조에 배정
         async function addFixedMember() {
             if (!isAdmin) return;
             const name = prompt('참가시킬 회원 이름을 입력하세요. (회원 명단과 동일하게)');
             if (!name || !name.trim()) return;
             const n = name.trim();
             if (!((joData || {}).playerData || {})[n]) { alert('회원 명단에 없는 이름입니다: ' + n); return; }
-            const val = prompt(`${n} 고정 핸디를 입력하세요.`, '28');
+            const val = prompt(`${n} 핸디를 입력하세요. (비우면 '핸디 미정'으로 마지막 조에 배정)`, '');
             if (val === null) return;
-            if (!/^\d{1,2}$/.test(val.trim())) { alert('핸디는 숫자로 입력하세요.'); return; }
+            const t = val.trim();
             cup.hdcpOverride = cup.hdcpOverride || {};
-            cup.hdcpOverride[n] = parseInt(val.trim());
+            cup.pending = cup.pending || [];
+            if (t === '') {
+                delete cup.hdcpOverride[n];
+                if (!cup.pending.includes(n)) cup.pending.push(n);
+            } else if (!/^\d{1,2}$/.test(t)) { alert('핸디는 숫자로 입력하세요.'); return; }
+            else {
+                cup.hdcpOverride[n] = parseInt(t);
+                cup.pending = cup.pending.filter(x => x !== n);
+            }
             cup.excluded = (cup.excluded || []).filter(x => x !== n);
             compute();
             renderAll();
