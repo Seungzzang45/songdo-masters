@@ -67,6 +67,8 @@
         .tag-buy { font-size: 0.66rem; font-weight: 800; color: var(--text-muted);
                    background: rgba(0,0,0,0.055); border-radius: 8px; padding: 3px 8px; white-space: nowrap; }
         .prize-no { color: var(--text-muted); font-size: 0.74rem; margin-right: 7px; font-weight: 700; }
+        .p-note { display: block; font-size: 0.72rem; color: var(--text-muted);
+                  padding-left: 19px; margin-top: 3px; line-height: 1.45; }
 
         .lr { counter-reset: lr; margin: 0; padding: 0; list-style: none; }
         .lr > li { position: relative; padding-left: 27px; margin-bottom: 12px;
@@ -463,7 +465,7 @@
             if (buys.length) {
                 html += `<div class="prize-group">💳 회비 구매 상품 <span style="color:var(--text-muted);font-weight:700;">${buys.length}점</span></div>`;
                 buys.forEach((p, i) => {
-                    html += `<div class="prize-item"><span><span class="prize-no">${i + 1}</span>${esc(p.item)}</span>
+                    html += `<div class="prize-item"><span><span class="prize-no">${i + 1}</span>${esc(p.item)}${p.note ? `<span class="p-note">${esc(p.note)}</span>` : ''}</span>
                         <span style="display:flex;align-items:center;gap:8px;"><span class="tag-buy">${esc(p.source || '회비구매')}</span>
                         <button class="prize-del" onclick="delPrize(${p.id})">×</button></span></div>`;
                 });
@@ -472,7 +474,7 @@
             html += `<div class="prize-group">🤝 찬조 상품 <span style="color:var(--text-muted);font-weight:700;">${sponsors.length}점</span></div>`;
             if (sponsors.length) {
                 sponsors.forEach((sp, i) => {
-                    html += `<div class="prize-item"><span><span class="prize-no">${i + 1}</span>${esc(sp.item)}</span>
+                    html += `<div class="prize-item"><span><span class="prize-no">${i + 1}</span>${esc(sp.item)}${sp.note ? `<span class="p-note">${esc(sp.note)}</span>` : ''}</span>
                         <span class="from">🤝 ${esc(sp.name)} 찬조</span></div>`;
                 });
             } else {
@@ -557,7 +559,8 @@
             if (!isAdmin) return;
             const item = prompt('상품명을 입력하세요.');
             if (!item || !item.trim()) return;
-            cup.extraPrizes.push({ id: Date.now(), item: item.trim(), source: '회비구매' });
+            const note = prompt('상품 설명을 입력하세요. (선택 — 없으면 비워두세요)') || '';
+            cup.extraPrizes.push({ id: Date.now(), item: item.trim(), note: note.trim(), source: '회비구매' });
             renderAll();
             await saveCup();
         }
