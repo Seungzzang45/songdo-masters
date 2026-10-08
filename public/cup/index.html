@@ -68,6 +68,17 @@
                    background: rgba(0,0,0,0.055); border-radius: 8px; padding: 3px 8px; white-space: nowrap; }
         .prize-no { color: var(--text-muted); font-size: 0.74rem; margin-right: 7px; font-weight: 700; }
 
+        .lr { counter-reset: lr; margin: 0; padding: 0; list-style: none; }
+        .lr > li { position: relative; padding-left: 27px; margin-bottom: 12px;
+                   font-size: 0.82rem; line-height: 1.62; color: var(--text-main); }
+        .lr > li::before { counter-increment: lr; content: counter(lr); position: absolute; left: 0; top: 1px;
+                           width: 20px; height: 20px; border-radius: 6px; background: rgba(0,103,71,0.1);
+                           color: var(--primary); font-size: 0.66rem; font-weight: 900;
+                           display: flex; align-items: center; justify-content: center; }
+        .lr .t { display: block; color: var(--primary); font-weight: 900; margin-bottom: 2px; }
+        .lr .sub { display: block; color: var(--text-muted); padding-left: 10px; margin-top: 2px; }
+        .lr .hl { color: #c0392b; font-weight: 700; }
+
         .group-card { border: 1.5px solid var(--border); border-radius: 12px; margin-bottom: 12px; overflow: hidden; }
         .group-head { background: rgba(0,103,71,0.07); padding: 8px 12px; font-weight: 900; font-size: 0.9rem; color: var(--primary); }
         table { width: 100%; border-collapse: collapse; font-size: 0.83rem; }
@@ -179,6 +190,38 @@
             </h2>
             <div id="prize-list"></div>
         </section>
+
+        <section class="card">
+            <h2>⛳ 경기조건 및 로컬룰</h2>
+            <ol class="lr">
+                <li><span class="t">대회 운영</span>본 경기는 순수 아마추어 대회로서 <b>조별 스트로크</b> 방식으로 진행되며, R&amp;A와 USGA에서 승인된 골프규칙과 운영진이 정한 로컬룰을 적용한다. 경기 중 발생하는 모든 문제는 상기 규칙에 의거 운영진이 최종 결정한다.</li>
+                <li><span class="t">출발 시간</span>경기자가 출발시간에 늦었지만 그 출발시간으로부터 <b>5분 이내</b>에 플레이 준비를 마치고 출발 지점에 도착하면, 실격 대신 첫 홀에서 <b>2벌타</b>를 받고 참가할 수 있다.</li>
+                <li><span class="t">OB 및 페널티구역</span>OB는 백색 말뚝, 페널티구역(워터해저드)은 적색 말뚝으로 표시한다. (말뚝과 선이 같이 있을 경우 <b>선이 우선</b>이다) 페널티구역은 안전과 경기 진행을 위하여 홀과 홀 사이를 넘어가서 플레이할 수 없다.</li>
+                <li><span class="t">수리지</span>수리지는 백색선 혹은 노란 깃발로 표시한다. 잔디 보식지역 작업구역 내, 이식목 아래 둘레, 나무를 캐낸 자리는 수리지이며 <b>벌타 없이 드롭</b>한다.</li>
+                <li><span class="t">움직일 수 없는 인공장애물</span>지주목, 고무매트, 맨홀, 쇠말뚝, 수도꼭지와 감아놓은 살수용 호스, 모래통, 스프링클러 헤드, 방공시설물, 고정된 의자, 조명탑, 철망, 배수(U자관) 등은 움직일 수 없는 인공장애물이며 <b>벌타 없이 드롭</b>한다.</li>
+                <li><span class="t">사용하지 않는 그린</span>플레이 금지구역이며 <b>벌타 없이 1클럽 이내</b>에 드롭한다.</li>
+                <li><span class="t">화단 및 조경</span>인위적으로 군식·군락된 영산홍, 장미, 회양목, 1년생 화단(꽃·잔디·화초류) 등은 플레이 금지구역이며 <b>무벌타 드롭</b> 후 플레이한다.</li>
+                <li><span class="t">페널티구역 지주목·로프</span>안전을 위해 설치한 지주목은 페널티구역 말뚝이며, 지주목을 연결하는 로프는 페널티구역 연결선이다. (구역 밖에 볼이 있고 인공장애물이 스윙에 장애가 되면 구제받을 수 있고, 구역 안에 있는 볼은 드롭이 불가하여 구제받을 수 없다)</li>
+                <li><span class="t">카트도로</span>카트도로에 떨어진 볼은 벌타 없이 페어웨이 방향으로 <b>1클럽 이내</b>에 드롭한다. 경기 진행상 코스에서 샷한 공이 오르막 카트도로 아래로 굴러 내려오는 경우, 첫 번째 볼걸이(스톱) 지점을 넘어 내려오더라도 <b>첫 번째 볼걸이 지점</b>에서 벌타 없이 드롭한다.</li>
+                <li><span class="t">벙커 발자국</span>벙커 내 발자국에 볼이 들어갔을 경우 벌타 없이 수리 후 리플레이스할 수 있다. 단, 깊게 박힌 볼(에그볼)의 경우 구제받을 수 없다.</li>
+                <li><span class="t">지면에 박힌 볼</span>스루더그린으로 구제 지역을 확대한다.</li>
+                <li><span class="t">라운드 중의 연습</span>플레이어는 한 홀의 플레이 중에 연습 스트로크를 해서는 안 된다. 홀과 홀 사이에서도 연습 스트로크를 해서는 안 된다.</li>
+                <li><span class="t">경기의 일시정지 (규칙 제6조 8항)</span>
+                    <span class="sub">가. 플레이의 즉시 중단 — 한 번 길게 울리는 사이렌</span>
+                    <span class="sub">나. 일시 중지 — 3번 연속으로 짧게 울리는 사이렌 반복</span>
+                    <span class="sub">다. 경기 재개 — 2번 연속으로 짧게 울리는 사이렌 반복</span></li>
+                <li><span class="t">이동수단 및 캐디</span>플레이어는 정규 라운드를 하는 동안 카트를 탑승할 수 있으며, 전동카트와 캐디는 <b>공용</b>으로 이용한다.</li>
+                <li><span class="t">홀아웃</span><span class="hl">본 대회는 컨시드(Concede)를 허용한다. 컨시드는 홀 깃대 70cm에 표시되어 있는 것으로 한다.</span></li>
+                <li><span class="t">기타</span>
+                    <span class="sub">가. 핀 위치가 IN · OUT 다르게 사용될 수 있다.</span>
+                    <span class="sub">나. 거리측정기는 사용할 수 있으며, 클럽 수는 14개를 초과할 수 없다.</span>
+                    <span class="sub">다. 플레이어는 비공인 드라이버와 볼을 사용할 수 있다.</span>
+                    <span class="sub">라. 순조로운 경기 진행을 위해 <span class="hl">특설티(오비티 및 해저드티)</span>가 있을 경우 이를 사용해야 한다.</span>
+                    <span class="sub">마. 경기 지연으로 인해 라이트 경기 시 선수는 이를 거부할 수 없다.</span></li>
+            </ol>
+            <div class="note-box">경기 중 발생하는 모든 사항의 최종 판단은 <b>운영진(총무)</b>이 한다.</div>
+        </section>
+
     </div>
 
     <div id="toast" class="toast">저장되었습니다!</div>
