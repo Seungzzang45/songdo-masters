@@ -168,6 +168,7 @@
                 <li><b>출석</b>은 그 달 투표에서 '참석'을 눌렀거나 성적이 기록되면 인정하며, <b>월 1회</b>로 집계합니다.</li>
                 <li><b>찬조</b>는 찬조 내역이 등록된 월 기준 <b>월 1회</b>입니다. 한 달에 여러 건을 내도 1회입니다.</li>
                 <li>8월 알펜시아는 <b>출석으로 인정</b>합니다. 평균타수 계산에서만 제외됩니다.</li>
+                <li><b>4월 봄맞이 라운딩</b>(이벤트)과 <b>11월 대회 당일</b>은 출석 집계에서 제외합니다.</li>
             </ul>
         </section>
 
@@ -231,6 +232,8 @@
 
         // 8월은 이벤트성 라운딩이라 핸디(평균타수) 계산에서 제외
         const EXCLUDED_SCORE_MONTHS = [8];
+        // 4월 봄맞이(이벤트 라운딩)와 11월(대회 당월)은 출석 집계에서 제외
+        const EXCLUDED_ATT_MONTHS = [4, 11];
 
         function esc(s) {
             return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -279,10 +282,12 @@
             Object.entries(pd).forEach(([name, p]) => {
                 attMonths[name] = new Set();
                 Object.entries(p.scores || {}).forEach(([m, s]) => {
-                    if (s !== '' && s !== null && s !== undefined) attMonths[name].add(parseInt(m));
+                    const mm = parseInt(m);
+                    if (s !== '' && s !== null && s !== undefined && !EXCLUDED_ATT_MONTHS.includes(mm)) attMonths[name].add(mm);
                 });
             });
             (voteDataAll.polls || []).forEach(poll => {
+                if (EXCLUDED_ATT_MONTHS.includes(poll.month)) return;
                 Object.entries(poll.votes || {}).forEach(([name, v]) => {
                     const opts = Array.isArray(v.option) ? v.option : [v.option];
                     const attended = opts.some(o => String(o).includes('참석') && !String(o).includes('불참'));
