@@ -168,7 +168,7 @@
                 <li><b>출석</b>은 그 달 투표에서 '참석'을 눌렀거나 성적이 기록되면 인정하며, <b>월 1회</b>로 집계합니다.</li>
                 <li><b>찬조</b>는 찬조 내역이 등록된 월 기준 <b>월 1회</b>입니다. 한 달에 여러 건을 내도 1회입니다.</li>
                 <li>8월 알펜시아는 <b>출석으로 인정</b>합니다. 평균타수 계산에서만 제외됩니다.</li>
-                <li><b>4월 봄맞이 라운딩</b>(이벤트)과 <b>11월 대회 당일</b>은 출석 집계에서 제외합니다.</li>
+                <li><b>4월 봄맞이 야유회</b>(이벤트)와 <b>11월 대회 당일</b>은 출석 집계에서 제외합니다. 같은 4월이라도 <b>4월 1일 정기라운딩</b>은 출석으로 인정합니다.</li>
             </ul>
         </section>
 
@@ -232,8 +232,10 @@
 
         // 8월은 이벤트성 라운딩이라 핸디(평균타수) 계산에서 제외
         const EXCLUDED_SCORE_MONTHS = [8];
-        // 4월 봄맞이(이벤트 라운딩)와 11월(대회 당월)은 출석 집계에서 제외
-        const EXCLUDED_ATT_MONTHS = [4, 11];
+        // 출석 제외 — 성적 기준은 대회 당월만, 투표 기준은 4월 봄맞이 야유회(이벤트)와 대회 당월
+        // (4월은 4/1 정기라운딩과 4/24 봄맞이 야유회가 함께 있어, 정기라운딩 성적 출석은 그대로 인정한다)
+        const EXCLUDED_ATT_SCORE_MONTHS = [11];
+        const EXCLUDED_ATT_VOTE_MONTHS = [4, 11];
 
         function esc(s) {
             return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -283,11 +285,11 @@
                 attMonths[name] = new Set();
                 Object.entries(p.scores || {}).forEach(([m, s]) => {
                     const mm = parseInt(m);
-                    if (s !== '' && s !== null && s !== undefined && !EXCLUDED_ATT_MONTHS.includes(mm)) attMonths[name].add(mm);
+                    if (s !== '' && s !== null && s !== undefined && !EXCLUDED_ATT_SCORE_MONTHS.includes(mm)) attMonths[name].add(mm);
                 });
             });
             (voteDataAll.polls || []).forEach(poll => {
-                if (EXCLUDED_ATT_MONTHS.includes(poll.month)) return;
+                if (EXCLUDED_ATT_VOTE_MONTHS.includes(poll.month)) return;
                 Object.entries(poll.votes || {}).forEach(([name, v]) => {
                     const opts = Array.isArray(v.option) ? v.option : [v.option];
                     const attended = opts.some(o => String(o).includes('참석') && !String(o).includes('불참'));
