@@ -181,11 +181,14 @@
 
             <h3>1. 마스터즈상</h3>
             <ul class="rules" style="margin:0; padding-left:18px;">
-                <li><b>전년도 평균타수 대비 가장 많이 타수를 낮춘 분</b>에게 수여합니다.</li>
-                <li>올해 가입하신 분은 <b>올해 평균타수</b>를 기준으로 합니다.</li>
+                <li>회원마다 <b>기준타수</b>가 있습니다. 작년부터 계신 분은 <b>작년 평균타수</b>, 올해 가입하신 분은 <b>올해 10월까지 평균타수</b>입니다.</li>
+                <li>11월 회장기 <b>대회 당일 타수</b>가 기준타수보다 <b>가장 많이 줄어든 분</b>이 수상합니다.</li>
                 <li>자격은 <b>올해 정기라운딩 4회 이상 참석자</b>입니다.</li>
                 <li>시상은 <b>상품 선택권 최우선순위</b>입니다. 각 조 1등보다 먼저 상품을 고릅니다.</li>
             </ul>
+            <div class="note-box"><b>수상자가 속한 조는 그 등수 한 자리가 비게 됩니다.</b><br>
+                예를 들어 마스터즈상 수상자가 <b>3조 2등</b>이라면, 3조에는 <b>1등 · 3등 · 4등</b>만 남고 2등은 없습니다.
+                수상자는 이미 가장 먼저 상품을 골랐기 때문이며, <b>나머지 분들의 등수는 올라가지 않고 그대로</b>입니다.</div>
 
             <h3>2. 팀별 베스트 포토제닉상</h3>
             <ul class="rules" style="margin:0; padding-left:18px;">
@@ -404,52 +407,64 @@
                 return a.name.localeCompare(b.name, 'ko');
             });
 
-            // 마스터즈상 — 작년 핸디 대비 올해 핸디 개선폭
-            // 올해 가입자(작년 핸디 없음)는 올해 10월까지 평균핸디를 기준으로 삼아 개선폭 0이 된다
+            // 마스터즈상 — 기준타수에서 대회 당일 타수를 가장 많이 줄인 사람
+            // 기준타수: 기존 회원은 작년 평균타수(작년핸디+72), 올해 가입자는 올해 10월까지 평균타수
             const prevMap = cup.prevHdcp || {};
             participants.forEach(p => {
                 const hasPrev = prevMap[p.name] !== undefined;
                 p.newbie = !hasPrev;
-                p.prevH = hasPrev ? parseInt(prevMap[p.name]) : p.hdcp;
-                p.improve = (p.hdcp === null || p.prevH === null) ? null : p.prevH - p.hdcp;
-                p.mastersOk = p.improve !== null && p.roundCount >= 4;
+                p.baseScore = hasPrev ? parseInt(prevMap[p.name]) + 72
+                                      : (p.avg !== null ? Math.round(p.avg * 10) / 10 : null);
+                const d = cup.scores[p.name];
+                p.dayScore = (d !== undefined && d !== '') ? parseInt(d) : null;
+                p.improve = (p.baseScore !== null && p.dayScore !== null)
+                            ? Math.round((p.baseScore - p.dayScore) * 10) / 10 : null;
+                p.mastersOk = p.baseScore !== null && p.roundCount >= 4;
             });
         }
 
-        // 마스터즈상 현황 — 자격자(정기라운딩 4회 이상)를 개선폭 순으로
+        // 마스터즈상 현황 — 자격자(정기라운딩 4회 이상), 기준타수 대비 당일 타수
         function renderMasters() {
             const el = document.getElementById('masters-list');
             if (!el) return;
-            const list = participants.filter(p => p.mastersOk)
-                .sort((a, b) => b.improve - a.improve || a.hdcp - b.hdcp || a.name.localeCompare(b.name, 'ko'));
+            const list = participants.filter(p => p.mastersOk);
             if (!list.length) {
                 el.innerHTML = '<div style="color:var(--text-muted);font-size:0.82rem;">자격 요건(정기라운딩 4회 이상)을 채운 회원이 아직 없습니다.</div>';
+                document.getElementById('masters-note').innerText = '';
                 return;
             }
-            const best = list[0].improve;
-            const leaders = list.filter(p => p.improve === best).map(p => p.name);
+            const played = list.filter(p => p.improve !== null).sort((a, b) => b.improve - a.improve);
+            const waiting = list.filter(p => p.improve === null);
+            const best = played.length ? played[0].improve : null;
+            const leaders = played.filter(p => p.improve === best).map(p => p.name);
             const winner = cup.mastersWinner || (leaders.length === 1 ? leaders[0] : null);
+
             let rows = '';
-            list.forEach((p, i) => {
+            played.concat(waiting).forEach((p, i) => {
                 const isW = winner === p.name;
-                const tie = p.improve === best;
+                const tie = p.improve !== null && p.improve === best;
                 rows += `<tr style="${isW ? 'background:rgba(201,168,76,0.16);' : ''}">
-                    <td>${tie ? '<b style="color:var(--gold-dark);">1</b>' : i + 1}</td>
+                    <td>${p.improve === null ? '-' : (tie ? '<b style="color:var(--gold-dark);">1</b>' : i + 1)}</td>
                     <td class="name">${isW ? '🏅 ' : ''}${esc(p.name)}${p.newbie ? '<span style="font-size:0.62rem;color:var(--text-muted);"> 신입</span>' : ''}</td>
-                    <td>${p.prevH}</td><td>${p.hdcp}</td>
-                    <td><b style="color:${p.improve > 0 ? 'var(--primary)' : 'var(--text-muted)'};">${p.improve > 0 ? '-' + p.improve : (p.improve === 0 ? '0' : '+' + (-p.improve))}</b></td>
-                    <td>${p.roundCount}회</td>
+                    <td>${p.baseScore}</td>
+                    <td>${p.dayScore !== null ? p.dayScore : '<span class="score-empty">-</span>'}</td>
+                    <td>${p.improve === null ? '-' : `<b style="color:${p.improve > 0 ? 'var(--primary)' : 'var(--text-muted)'};">${p.improve > 0 ? '-' + p.improve : (p.improve === 0 ? '0' : '+' + (-p.improve))}</b>`}</td>
                     <td class="score-cell editable" onclick="setMastersWinner('${esc(p.name)}')">${isW ? '해제' : '지정'}</td>
                 </tr>`;
             });
             el.innerHTML = `<table>
-                <tr><th>순위</th><th style="text-align:left;">이름</th><th>작년</th><th>올해</th><th>개선</th><th>라운드</th><th class="admin-col">수상</th></tr>
+                <tr><th>순위</th><th style="text-align:left;">이름</th><th>기준타수</th><th>당일</th><th>줄인타수</th><th class="admin-col">수상</th></tr>
                 ${rows}</table>`;
+
             const note = document.getElementById('masters-note');
-            if (note) {
-                note.innerHTML = leaders.length > 1 && !cup.mastersWinner
-                    ? `현재 <b>${leaders.map(esc).join(' · ')}</b> 회원이 <b>${best}타 개선</b>으로 공동 1위입니다. 총무가 수상자를 지정해 주세요.`
-                    : (winner ? `현재 수상자는 <b>${esc(winner)}</b> 회원입니다. 상품을 <b>가장 먼저</b> 고릅니다.` : '수상자가 아직 정해지지 않았습니다.');
+            if (!played.length) {
+                note.innerHTML = '대회 당일 타수가 입력되면 <b>기준타수에서 가장 많이 줄인 분</b>이 자동으로 1위에 오릅니다.';
+            } else if (leaders.length > 1 && !cup.mastersWinner) {
+                note.innerHTML = `현재 <b>${leaders.map(esc).join(' · ')}</b> 회원이 <b>${best}타</b>를 줄여 공동 1위입니다. 총무가 수상자를 지정해 주세요.`;
+            } else if (winner) {
+                note.innerHTML = `현재 수상자는 <b>${esc(winner)}</b> 회원입니다. 상품을 <b>가장 먼저</b> 고릅니다.`;
+            } else {
+                note.innerHTML = '수상자가 아직 정해지지 않았습니다.';
             }
         }
 
@@ -495,7 +510,7 @@
                     const rank = ranks[p.name];
                     const avgTxt = p.pending ? '미정' : (p.fixed ? '고정' : (Math.round(p.avg * 10) / 10).toFixed(1));
                     rows += `<tr>
-                        <td class="name">${isAdmin ? `<button onclick="toggleExclude('${esc(p.name)}')" title="참가 제외" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:0.8rem;padding:0 4px 0 0;">✖</button>` : ''}${esc(p.name)} ${rank ? `<span class="rank-badge rank-${Math.min(rank,4)}">${rank}등</span>` : ''}</td>
+                        <td class="name">${isAdmin ? `<button onclick="toggleExclude('${esc(p.name)}')" title="참가 제외" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:0.8rem;padding:0 4px 0 0;">✖</button>` : ''}${esc(p.name)} ${cup.mastersWinner === p.name ? '<span class="rank-badge rank-1">🏅 마스터즈상</span>' : (rank ? `<span class="rank-badge rank-${Math.min(rank,4)}">${rank}등</span>` : '')}</td>
                         <td class="hdcp score-cell editable" onclick="editHdcp('${esc(p.name)}')">${p.pending ? '<span style="color:var(--text-muted);font-weight:400;">-</span>' : p.hdcp + (p.fixed ? '📌' : '')}<div style="font-size:0.6rem;color:var(--text-muted);font-weight:400;">${avgTxt}</div></td>
                         <td>${p.lastScore !== undefined ? p.lastScore + '<span style="font-size:0.62rem;color:var(--text-muted);">(' + p.lastMonth + '월)</span>' : '-'}</td>
                         <td>${p.att}</td>
@@ -553,7 +568,7 @@
             document.getElementById('pick-list').innerHTML = all.map((p, i) => `
                 <div class="pick-item">
                     <span class="pick-no">${i + 1}</span>
-                    <span>${p.name === mw ? '🏅 ' : ''}<b>${esc(p.name)}</b> <span style="font-size:0.7rem;color:var(--text-muted);">(${p.name === mw ? '마스터즈상 · ' : ''}${p.group}조 ${p.rank}등)</span></span>
+                    <span>${p.name === mw ? '🏅 ' : ''}<b>${esc(p.name)}</b> <span style="font-size:0.7rem;color:var(--text-muted);">(${p.name === mw ? '마스터즈상' : p.group + '조 ' + p.rank + '등'})</span></span>
                     <span class="pick-meta">${p.day}타 · 출석${p.att}+찬조${p.spon}=${p.att + p.spon}</span>
                 </div>`).join('');
         }
