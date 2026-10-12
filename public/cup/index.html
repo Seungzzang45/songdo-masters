@@ -181,7 +181,7 @@
 
             <h3>1. 마스터즈상</h3>
             <ul class="rules" style="margin:0; padding-left:18px;">
-                <li>회원마다 <b>기준타수</b>가 있습니다. 작년부터 계신 분은 <b>작년 평균타수</b>, 올해 가입하신 분은 <b>올해 10월까지 평균타수</b>입니다.</li>
+                <li>기준타수는 <b>올해 평균타수</b>입니다. 가입 시기와 관계없이 모두 같은 기준이며, 8월 알펜시아는 빠집니다.</li>
                 <li>11월 회장기 <b>대회 당일 타수</b>가 기준타수보다 <b>가장 많이 줄어든 분</b>이 수상합니다.</li>
                 <li>자격은 <b>올해 정기라운딩 4회 이상 참석자</b>입니다.</li>
                 <li>줄인 타수가 같으면 <b>출석 + 찬조 합</b>이 많은 분이 수상합니다.</li>
@@ -208,7 +208,7 @@
         </section>
 
         <section class="card">
-            <h2>🏅 마스터즈상 현황 <span class="sub">작년 핸디 대비 개선폭</span></h2>
+            <h2>🏅 마스터즈상 현황 <span class="sub">올해 평균타수 대비 당일 타수</span></h2>
             <div id="masters-list"></div>
             <div class="note-box" id="masters-note"></div>
         </section>
@@ -410,13 +410,9 @@
             });
 
             // 마스터즈상 — 기준타수에서 대회 당일 타수를 가장 많이 줄인 사람
-            // 기준타수: 기존 회원은 작년 평균타수(작년핸디+72), 올해 가입자는 올해 10월까지 평균타수
-            const prevMap = cup.prevHdcp || {};
+            // 기준타수는 가입 시기와 관계없이 모두 '올해 평균타수'(8월 이벤트 제외)
             participants.forEach(p => {
-                const hasPrev = prevMap[p.name] !== undefined;
-                p.newbie = !hasPrev;
-                p.baseScore = hasPrev ? parseInt(prevMap[p.name]) + 72
-                                      : (p.avg !== null ? Math.round(p.avg * 10) / 10 : null);
+                p.baseScore = p.avg !== null ? Math.round(p.avg * 10) / 10 : null;
                 const d = cup.scores[p.name];
                 p.dayScore = (d !== undefined && d !== '') ? parseInt(d) : null;
                 p.improve = (p.baseScore !== null && p.dayScore !== null)
@@ -453,7 +449,7 @@
                 const tie = p.improve !== null && p.improve === best && p.att + p.spon === bestSum;
                 rows += `<tr style="${isW ? 'background:rgba(201,168,76,0.16);' : ''}">
                     <td>${p.improve === null ? '-' : (tie ? '<b style="color:var(--gold-dark);">1</b>' : i + 1)}</td>
-                    <td class="name">${isW ? '🏅 ' : ''}${esc(p.name)}${p.newbie ? '<span style="font-size:0.62rem;color:var(--text-muted);"> 신입</span>' : ''}</td>
+                    <td class="name">${isW ? '🏅 ' : ''}${esc(p.name)}</td>
                     <td>${p.baseScore}</td>
                     <td>${p.dayScore !== null ? p.dayScore : '<span class="score-empty">-</span>'}</td>
                     <td>${p.improve === null ? '-' : `<b style="color:${p.improve > 0 ? 'var(--primary)' : 'var(--text-muted)'};">${p.improve > 0 ? '-' + p.improve : (p.improve === 0 ? '0' : '+' + (-p.improve))}</b>`}</td>
