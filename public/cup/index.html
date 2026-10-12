@@ -108,6 +108,8 @@
         .prize-item .from { font-size: 0.7rem; color: var(--gold-dark); font-weight: 800; }
         .prize-del { background: none; border: none; color: var(--danger); font-size: 1rem; cursor: pointer; display: none; }
         .admin .prize-del { display: block; }
+        .admin-col, td.score-cell.editable[onclick^="setMastersWinner"] { display: none; }
+        .admin .admin-col, .admin td.score-cell.editable[onclick^="setMastersWinner"] { display: table-cell; }
         .mini-btn { border: none; border-radius: 8px; padding: 8px 12px; font-size: 0.78rem; font-weight: 800; cursor: pointer; font-family: inherit;
                     background: rgba(0,103,71,0.1); color: var(--primary); display: none; }
         .admin .mini-btn { display: inline-block; }
@@ -197,7 +199,13 @@
                 <li>다른 시상과 <b>중복 수상이 가능</b>합니다.</li>
             </ul>
 
-            <div class="note-box">마스터즈상은 전년도 기록을 기준으로 하므로 <b>총무가 직접 확인하여 선정</b>합니다. 포토제닉상과 베스트 드레서상은 대회 당일 현장에서 선정합니다.</div>
+            <div class="note-box">마스터즈상은 작년 핸디가 등록되어 <b>자동으로 계산</b>됩니다. 포토제닉상과 베스트 드레서상은 대회 당일 현장에서 선정합니다.</div>
+        </section>
+
+        <section class="card">
+            <h2>🏅 마스터즈상 현황 <span class="sub">작년 핸디 대비 개선폭</span></h2>
+            <div id="masters-list"></div>
+            <div class="note-box" id="masters-note"></div>
         </section>
 
         <section class="card">
@@ -364,7 +372,7 @@
                 if (!cnt && isPending && !hasOverride) {
                     participants.push({
                         name, hdcp: null, avg: null, scores, fixed: false, pending: true,
-                        pendingOrder: pendingIdx[name],
+                        pendingOrder: pendingIdx[name], roundCount: 0,
                         lastMonth: 0, lastScore: undefined,
                         att: (attMonths[name] || new Set()).size,
                         spon: sponsorCnt[norm(name)] || 0
@@ -378,7 +386,7 @@
                 for (let m = 11; m >= 3; m--) { if (scores[m] !== undefined) { lastMonth = m; break; } }
                 participants.push({
                     name, hdcp, avg, scores, fixed: hasOverride, pending: false,
-                    lastMonth, lastScore: scores[lastMonth],
+                    roundCount: cnt, lastMonth, lastScore: scores[lastMonth],
                     att: (attMonths[name] || new Set()).size,
                     spon: sponsorCnt[norm(name)] || 0
                 });
@@ -395,6 +403,61 @@
                 }
                 return a.name.localeCompare(b.name, 'ko');
             });
+
+            // 마스터즈상 — 작년 핸디 대비 올해 핸디 개선폭
+            // 올해 가입자(작년 핸디 없음)는 올해 10월까지 평균핸디를 기준으로 삼아 개선폭 0이 된다
+            const prevMap = cup.prevHdcp || {};
+            participants.forEach(p => {
+                const hasPrev = prevMap[p.name] !== undefined;
+                p.newbie = !hasPrev;
+                p.prevH = hasPrev ? parseInt(prevMap[p.name]) : p.hdcp;
+                p.improve = (p.hdcp === null || p.prevH === null) ? null : p.prevH - p.hdcp;
+                p.mastersOk = p.improve !== null && p.roundCount >= 4;
+            });
+        }
+
+        // 마스터즈상 현황 — 자격자(정기라운딩 4회 이상)를 개선폭 순으로
+        function renderMasters() {
+            const el = document.getElementById('masters-list');
+            if (!el) return;
+            const list = participants.filter(p => p.mastersOk)
+                .sort((a, b) => b.improve - a.improve || a.hdcp - b.hdcp || a.name.localeCompare(b.name, 'ko'));
+            if (!list.length) {
+                el.innerHTML = '<div style="color:var(--text-muted);font-size:0.82rem;">자격 요건(정기라운딩 4회 이상)을 채운 회원이 아직 없습니다.</div>';
+                return;
+            }
+            const best = list[0].improve;
+            const leaders = list.filter(p => p.improve === best).map(p => p.name);
+            const winner = cup.mastersWinner || (leaders.length === 1 ? leaders[0] : null);
+            let rows = '';
+            list.forEach((p, i) => {
+                const isW = winner === p.name;
+                const tie = p.improve === best;
+                rows += `<tr style="${isW ? 'background:rgba(201,168,76,0.16);' : ''}">
+                    <td>${tie ? '<b style="color:var(--gold-dark);">1</b>' : i + 1}</td>
+                    <td class="name">${isW ? '🏅 ' : ''}${esc(p.name)}${p.newbie ? '<span style="font-size:0.62rem;color:var(--text-muted);"> 신입</span>' : ''}</td>
+                    <td>${p.prevH}</td><td>${p.hdcp}</td>
+                    <td><b style="color:${p.improve > 0 ? 'var(--primary)' : 'var(--text-muted)'};">${p.improve > 0 ? '-' + p.improve : (p.improve === 0 ? '0' : '+' + (-p.improve))}</b></td>
+                    <td>${p.roundCount}회</td>
+                    <td class="score-cell editable" onclick="setMastersWinner('${esc(p.name)}')">${isW ? '해제' : '지정'}</td>
+                </tr>`;
+            });
+            el.innerHTML = `<table>
+                <tr><th>순위</th><th style="text-align:left;">이름</th><th>작년</th><th>올해</th><th>개선</th><th>라운드</th><th class="admin-col">수상</th></tr>
+                ${rows}</table>`;
+            const note = document.getElementById('masters-note');
+            if (note) {
+                note.innerHTML = leaders.length > 1 && !cup.mastersWinner
+                    ? `현재 <b>${leaders.map(esc).join(' · ')}</b> 회원이 <b>${best}타 개선</b>으로 공동 1위입니다. 총무가 수상자를 지정해 주세요.`
+                    : (winner ? `현재 수상자는 <b>${esc(winner)}</b> 회원입니다. 상품을 <b>가장 먼저</b> 고릅니다.` : '수상자가 아직 정해지지 않았습니다.');
+            }
+        }
+
+        async function setMastersWinner(name) {
+            if (!isAdmin) return;
+            cup.mastersWinner = (cup.mastersWinner === name) ? '' : name;
+            renderAll();
+            await saveCup();
         }
 
         // 조별 순위 계산: 당일 스트로크 그대로, 동타는 출석+찬조 많은 순
@@ -467,6 +530,7 @@
                     '</b> 회원은 2026년 정기라운딩 성적 기록이 없어 <b>직전년도 핸디</b>로 배정했습니다.';
             } else { fxEl.style.display = 'none'; }
 
+            renderMasters();
             renderPickOrder(groups);
             renderPrizes();
         }
@@ -484,10 +548,12 @@
             if (!all.length) { sec.style.display = 'none'; return; }
             sec.style.display = 'block';
             all.sort((a, b) => a.rank - b.rank || (b.att + b.spon) - (a.att + a.spon) || a.day - b.day || a.name.localeCompare(b.name, 'ko'));
+            const mw = cup.mastersWinner;
+            if (mw) { const mi = all.findIndex(x => x.name === mw); if (mi > 0) all.unshift(all.splice(mi, 1)[0]); }
             document.getElementById('pick-list').innerHTML = all.map((p, i) => `
                 <div class="pick-item">
                     <span class="pick-no">${i + 1}</span>
-                    <span><b>${esc(p.name)}</b> <span style="font-size:0.7rem;color:var(--text-muted);">(${p.group}조 ${p.rank}등)</span></span>
+                    <span>${p.name === mw ? '🏅 ' : ''}<b>${esc(p.name)}</b> <span style="font-size:0.7rem;color:var(--text-muted);">(${p.name === mw ? '마스터즈상 · ' : ''}${p.group}조 ${p.rank}등)</span></span>
                     <span class="pick-meta">${p.day}타 · 출석${p.att}+찬조${p.spon}=${p.att + p.spon}</span>
                 </div>`).join('');
         }
