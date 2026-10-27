@@ -82,7 +82,10 @@
         .lr .hl { color: var(--text-main); font-weight: 700; }
 
         .group-card { border: 1.5px solid var(--border); border-radius: 12px; margin-bottom: 12px; overflow: hidden; }
-        .group-head { background: rgba(0,103,71,0.07); padding: 8px 12px; font-weight: 900; font-size: 0.9rem; color: var(--primary); }
+        .group-head { background: rgba(0,103,71,0.07); padding: 8px 12px; font-weight: 900; font-size: 0.9rem; color: var(--primary);
+                      display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+        .group-head .tee { font-size: 0.74rem; font-weight: 800; color: #fff; background: var(--gold-dark);
+                           border-radius: 10px; padding: 3px 10px; letter-spacing: -0.2px; }
         table { width: 100%; border-collapse: collapse; font-size: 0.83rem; }
         th { background: rgba(0,103,71,0.04); color: var(--text-muted); font-size: 0.68rem; padding: 5px 6px; text-align: center; font-weight: 700; }
         td { padding: 7px 6px; border-top: 1px solid rgba(0,0,0,0.05); text-align: center; }
@@ -133,8 +136,8 @@
             <h2>📋 대회 개요</h2>
             <table class="info-tb">
                 <tr><th>일시</th><td>2026년 11월 4일(수)</td></tr>
-                <tr><th>장소</th><td>클럽72 · 하늘코스 7팀 + 오션코스 2팀</td></tr>
-                <tr><th>티오프</th><td>12:22 ~ 12:53<br><span style="color:var(--text-muted);font-size:0.78rem;">오션코스 12:22 / 12:29 · 하늘코스 OUT 12:32 / 12:39 / 12:46 / 12:53 · IN 12:39 / 12:46 / 12:53</span></td></tr>
+                <tr><th>장소</th><td>클럽72 하늘코스 · 8팀</td></tr>
+                <tr><th>티오프</th><td><b>12:11 ~ 12:53</b><br><span style="color:var(--text-muted);font-size:0.78rem;">IN 12:11 · 12:39 · 12:46 · 12:53 &nbsp;|&nbsp; OUT 12:32 · 12:39 · 12:46 · 12:53<br>조별 시간은 아래 조편성에서 확인하세요.</span></td></tr>
                 <tr><th>주소</th><td>인천시 중구 공항동로 135번길 267</td></tr>
                 <tr><th>경기 방식</th><td>조별 스트로크 플레이 (핸디 보정 없음)</td></tr>
                 <tr><th>참가</th><td><span id="ov-count">-</span> · 평균타수(핸디)순 조편성</td></tr>
@@ -412,6 +415,10 @@
                 return a.name.localeCompare(b.name, 'ko');
             });
 
+            // 조편성표가 있으면 실제 출전자만 마스터즈상 대상
+            const teamNames = new Set();
+            ((joData && joData.teams) || []).forEach(t => (t.players || []).forEach(n => teamNames.add(n)));
+
             // 마스터즈상 — 기준타수에서 대회 당일 타수를 가장 많이 줄인 사람
             // 기준타수는 가입 시기와 관계없이 모두 '올해 평균타수'(8월 이벤트 제외)
             participants.forEach(p => {
@@ -420,7 +427,8 @@
                 p.dayScore = (d !== undefined && d !== '') ? parseInt(d) : null;
                 p.improve = (p.baseScore !== null && p.dayScore !== null)
                             ? Math.round((p.baseScore - p.dayScore) * 10) / 10 : null;
-                p.mastersOk = p.baseScore !== null && p.att >= 4; // 출석(8월 알펜시아 포함) 4회 이상
+                // 출석(8월 알펜시아 포함) 4회 이상 + 조편성표에 든 실제 출전자
+                p.mastersOk = p.baseScore !== null && p.att >= 4 && (!teamNames.size || teamNames.has(p.name));
             });
         }
 
@@ -484,6 +492,23 @@
             await saveCup();
         }
 
+        // 조 구성 — 조편성표(코스·티오프)가 등록되어 있으면 그대로, 없으면 핸디순 4명씩
+        function buildGroups() {
+            const byName = {};
+            participants.forEach(p => { byName[p.name] = p; });
+            const teams = (joData && joData.teams) || [];
+            const mapped = teams.map(t => ({
+                course: t.course || '', time: t.time || '',
+                players: (t.players || []).map(n => byName[n]).filter(Boolean)
+            })).filter(g => g.players.length);
+            if (mapped.length) return mapped;
+            const gs = [];
+            for (let i = 0; i < participants.length; i += 4) {
+                gs.push({ course: '', time: '', players: participants.slice(i, i + 4) });
+            }
+            return gs;
+        }
+
         // 조별 순위 계산: 당일 스트로크 그대로, 동타는 출석+찬조 많은 순
         function groupRanks(group) {
             const played = group.filter(p => cup.scores[p.name] !== undefined && cup.scores[p.name] !== '');
@@ -497,7 +522,9 @@
         function renderAll() {
             document.getElementById('page').className = 'wrapper' + (isAdmin ? ' admin' : '');
             document.getElementById('event-label').innerText = cup.eventLabel || (cup.eventMonth + '월 정기라운딩');
-            const countTxt = '참가 ' + participants.length + '명 · ' + Math.ceil(participants.length / 4) + '개조';
+            const gsForCount = buildGroups();
+            const playing = gsForCount.reduce((n, g) => n + g.players.length, 0);
+            const countTxt = '참가 ' + playing + '명 · ' + gsForCount.length + '개조';
             document.getElementById('participant-count').innerText = countTxt;
             const ovEl = document.getElementById('ov-count');
             if (ovEl) ovEl.innerText = countTxt.replace('참가 ', '');
@@ -506,9 +533,9 @@
             // 조편성
             const cont = document.getElementById('groups');
             cont.innerHTML = '';
-            const groups = [];
-            for (let i = 0; i < participants.length; i += 4) groups.push(participants.slice(i, i + 4));
-            groups.forEach((g, gi) => {
+            const groups = buildGroups();
+            groups.forEach((grp, gi) => {
+                const g = grp.players;
                 const ranks = groupRanks(g);
                 const div = document.createElement('div');
                 div.className = 'group-card';
@@ -528,7 +555,8 @@
                         <td class="score-cell editable" onclick="editScore('${esc(p.name)}')">${hasScore ? '<b style="color:var(--primary);">' + sc + '</b>' : '<span class="score-empty">입력</span>'}</td>
                     </tr>`;
                 });
-                div.innerHTML = `<div class="group-head">${gi + 1}조</div>
+                div.innerHTML = `<div class="group-head">${gi + 1}조
+                        ${grp.time ? `<span class="tee">${grp.course ? esc(grp.course) + ' · ' : ''}${esc(grp.time)}</span>` : ''}</div>
                     <table>
                         <tr><th style="text-align:left;">이름</th><th>핸디<div style="font-weight:400;">(평균)</div></th><th>직전월</th><th>출석</th><th>찬조</th><th>합계</th><th>당일타수</th></tr>
                         ${rows}
@@ -562,7 +590,8 @@
         // 전체 상품 선택 순서: 각조 1등들 → 2등들 → ..., 같은 등수는 출석+찬조 desc
         function renderPickOrder(groups) {
             const all = [];
-            groups.forEach((g, gi) => {
+            groups.forEach((grp, gi) => {
+                const g = grp.players;
                 const ranks = groupRanks(g);
                 g.forEach(p => {
                     if (ranks[p.name]) all.push({ ...p, rank: ranks[p.name], group: gi + 1, day: parseInt(cup.scores[p.name]) });
