@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<!-- 회장기 등수맞추기 이벤트 — 1·10·20등 예측, 기준타수 참고, 대회 후 적중 자동 집계 -->
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>송도마스터즈 등수맞추기</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #006747;
+            --gold: #c9a84c;
+            --gold-dark: #a07830;
+            --danger: #c0392b;
+            --bg: #eef2ee;
+            --text-main: #1a2e1a;
+            --text-muted: #6b8270;
+            --border: rgba(0, 103, 71, 0.14);
+        }
+        * { box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            background-image:
+                radial-gradient(ellipse at 20% 10%, rgba(0,103,71,0.07) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 90%, rgba(201,168,76,0.06) 0%, transparent 60%);
+            color: var(--text-main);
+            font-family: 'Noto Sans KR', sans-serif;
+            margin: 0;
+            min-height: 100vh;
+        }
+        .wrapper { max-width: 640px; margin: 0 auto; padding: 20px 14px; }
+        .header { text-align: center; padding: 8px 0 14px; position: relative; }
+        .header h1 { font-size: 1.4rem; font-weight: 900; margin: 0 0 6px; color: var(--primary); letter-spacing: -0.5px; }
+        .header h1 .gold { color: var(--gold); }
+        .subtitle { font-size: 0.78rem; color: var(--text-muted); margin: 0; }
+        .admin-btn { position: absolute; top: 0; right: 0; background: none; border: none; font-size: 20px; cursor: pointer; opacity: 0.55; }
+
+        .card { background: #fff; border: 1px solid var(--border); border-radius: 14px;
+                box-shadow: 0 3px 14px rgba(0,103,71,0.08); padding: 15px 16px; margin-bottom: 14px; }
+        .card h2 { background: linear-gradient(135deg, var(--primary), #00583c); color: #fff;
+                   border-radius: 14px 14px 0 0; margin: -15px -16px 13px; padding: 11px 16px;
+                   font-size: 0.95rem; font-weight: 900; border-bottom: 3px solid var(--gold); letter-spacing: -0.3px; }
+        .card h2 .sub { font-size: 0.7rem; font-weight: 500; color: rgba(255,255,255,0.78); margin-left: 6px; }
+
+        .rules li { font-size: 0.82rem; color: var(--text-muted); margin-bottom: 6px; line-height: 1.6; }
+        .prize-box { background: linear-gradient(135deg, rgba(201,168,76,0.18), rgba(201,168,76,0.08));
+                     border: 1px solid rgba(201,168,76,0.5); border-radius: 12px; padding: 12px;
+                     text-align: center; font-weight: 900; color: var(--gold-dark); font-size: 1rem; margin-bottom: 12px; }
+        .prize-box small { display: block; font-size: 0.74rem; font-weight: 600; color: var(--text-muted); margin-top: 3px; }
+
+        label.fld { display: block; font-size: 0.78rem; font-weight: 800; color: var(--primary); margin: 11px 0 5px; }
+        select { width: 100%; padding: 12px 10px; border: 1.5px solid var(--border); border-radius: 10px;
+                 font-size: 0.95rem; font-family: inherit; background: #fff; color: var(--text-main); }
+        select:disabled { background: #f3f5f3; color: var(--text-muted); }
+        .slot-no { display: inline-block; min-width: 20px; height: 20px; line-height: 20px; text-align: center;
+                   border-radius: 6px; background: var(--gold); color: #2c2208; font-size: 0.68rem; font-weight: 900; margin-right: 5px; }
+        .btn { width: 100%; padding: 15px; border: none; border-radius: 12px; background: var(--primary); color: #fff;
+               font-size: 1rem; font-weight: 800; font-family: inherit; cursor: pointer; margin-top: 14px; }
+        .btn:disabled { background: #b9c7bd; cursor: not-allowed; }
+
+        table { width: 100%; border-collapse: collapse; font-size: 0.83rem; }
+        th { background: rgba(0,103,71,0.04); color: var(--text-muted); font-size: 0.68rem; padding: 6px; text-align: center; font-weight: 700; }
+        td { padding: 7px 6px; border-top: 1px solid rgba(0,0,0,0.05); text-align: center; }
+        td.name { text-align: left; font-weight: 700; }
+        .base { font-weight: 900; color: var(--primary); }
+        .hit { color: var(--primary); font-weight: 900; }
+        .miss { color: #c3ccc5; }
+        .locked-note { font-size: 0.8rem; line-height: 1.6; color: var(--text-muted); background: #f7faf8;
+                       border-left: 3px solid var(--gold); border-radius: 0 8px 8px 0; padding: 10px 12px; margin-top: 10px; }
+        .badge { display: inline-block; font-size: 0.66rem; font-weight: 900; border-radius: 10px; padding: 3px 9px; }
+        .b-open { background: var(--primary); color: #fff; }
+        .b-closed { background: rgba(0,0,0,0.12); color: var(--text-muted); }
+        .winner-row { background: rgba(201,168,76,0.16); }
+        .mini-btn { border: none; border-radius: 8px; padding: 7px 11px; font-size: 0.76rem; font-weight: 800; cursor: pointer;
+                    font-family: inherit; background: rgba(255,255,255,0.2); color: #fff; display: none; float: right; }
+        .admin .mini-btn { display: inline-block; }
+        .foot-link { display: block; text-align: center; font-size: 0.78rem; color: var(--text-muted);
+                     text-decoration: none; padding: 12px 0 4px; }
+
+        .toast { position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%) translateY(120px);
+                 background: var(--primary); color: #fff; padding: 12px 26px; border-radius: 26px;
+                 font-weight: 700; transition: transform 0.3s; z-index: 10001; font-size: 0.9rem; }
+        .toast.show { transform: translateX(-50%) translateY(0); }
+    </style>
+</head>
+<body>
+    <div class="wrapper" id="page">
+        <header class="header">
+            <button class="admin-btn" onclick="toggleAdmin()">🔒</button>
+            <h1>🎯 회장기 <span class="gold">등수맞추기</span></h1>
+            <p class="subtitle" id="sub"></p>
+        </header>
+
+        <section class="card">
+            <h2>🎁 이벤트 안내 <span class="sub" id="status-badge"></span>
+                <button class="mini-btn" onclick="toggleStatus()">마감/재개</button>
+            </h2>
+            <div class="prize-box" id="prize-box">상품권 10만원<small>맞춘 분들끼리 나눠 갖습니다</small></div>
+            <ul class="rules" style="margin:0; padding-left:18px;">
+                <li>회장기 대회의 <b>1등 · 10등 · 20등</b>을 예측해서 모두 고르면 됩니다.</li>
+                <li>등수는 <b>대회 당일 스트로크 타수</b>로 정합니다. 핸디 보정은 없습니다.</li>
+                <li><b>동점자가 나오면 모두 인정</b>합니다. 예를 들어 10등이 두 명이면 둘 중 누구를 골라도 맞은 것입니다.</li>
+                <li>예측은 <b>회장기 라운딩 전까지</b> 할 수 있고, 언제든 다시 고쳐서 제출할 수 있습니다.</li>
+                <li>아래 <b>기준타수</b>(올해 평균타수)를 참고하세요.</li>
+            </ul>
+        </section>
+
+        <section class="card">
+            <h2>✏️ 내 예측</h2>
+            <label class="fld">내 이름</label>
+            <select id="who" onchange="onWho()"></select>
+
+            <label class="fld"><span class="slot-no">1</span>1등 예상</label>
+            <select id="r1"></select>
+
+            <label class="fld"><span class="slot-no">10</span>10등 예상</label>
+            <select id="r10"></select>
+
+            <label class="fld"><span class="slot-no">20</span>20등 예상</label>
+            <select id="r20"></select>
+
+            <button class="btn" id="submit-btn" onclick="submitPick()">예측 제출하기</button>
+            <div class="locked-note" id="my-note" style="display:none;"></div>
+        </section>
+
+        <section class="card" id="result-card" style="display:none;">
+            <h2>🏆 결과 발표</h2>
+            <div id="result-body"></div>
+        </section>
+
+        <section class="card">
+            <h2>📊 예측 현황 <span class="sub" id="pick-count"></span></h2>
+            <div id="picks-body"></div>
+        </section>
+
+        <section class="card">
+            <h2>📋 기준타수 <span class="sub">올해 평균타수 · 8월 제외</span></h2>
+            <div id="base-body"></div>
+        </section>
+
+        <a class="foot-link" href="/pair/">⚔️ 2026 짝꿍대전 기록 보기</a>
+    </div>
+
+    <div id="toast" class="toast">저장되었습니다!</div>
+
+    <script src="/nav.js" data-active="guess"></script>
+    <script>
+        const EXCLUDED_SCORE_MONTHS = [8]; // 8월 알펜시아는 이벤트 라운딩이라 평균에서 제외
+        let guess = { picks: {} }, joData = null, cupData = null;
+        let players = [];   // 출전자 (기준타수 포함)
+        let members = [];   // 예측 참여 가능한 전체 회원
+        let isAdmin = false;
+
+        function esc(s) {
+            return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.innerText = msg; t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 1800);
+        }
+        async function apiPost(url, body) {
+            try {
+                const r = await fetch(url, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+                return r.ok;
+            } catch (e) { return false; }
+        }
+
+        function isClosed() {
+            if (guess.status === 'closed') return true;
+            if (guess.status === 'open') return false;
+            if (!guess.deadline) return false;
+            const nowKST = new Date(Date.now() + 9 * 3600 * 1000).toISOString().slice(0, 16);
+            return nowKST >= guess.deadline;
+        }
+
+        async function loadAll() {
+            const [g, jo, cup] = await Promise.all([
+                fetch('/api/guess/load').then(r => r.json()).catch(() => ({ picks: {} })),
+                fetch('/api/load').then(r => r.json()).catch(() => ({})),
+                fetch('/api/cup/load').then(r => r.json()).catch(() => ({}))
+            ]);
+            guess = g || { picks: {} };
+            guess.picks = guess.picks || {};
+            joData = jo || {};
+            cupData = cup || {};
+            compute();
+            renderAll();
+        }
+
+        function compute() {
+            const pd = joData.playerData || {};
+            // 기준타수 = 올해 평균타수(8월 제외)
+            const base = {};
+            Object.entries(pd).forEach(([name, p]) => {
+                let sum = 0, cnt = 0;
+                Object.entries(p.scores || {}).forEach(([m, s]) => {
+                    const mm = parseInt(m);
+                    if (s !== '' && s !== null && s !== undefined && !EXCLUDED_SCORE_MONTHS.includes(mm)) {
+                        sum += parseInt(s); cnt++;
+                    }
+                });
+                base[name] = cnt ? Math.round((sum / cnt) * 10) / 10 : null;
+            });
+
+            // 출전자 = 조편성표에 든 사람
+            const names = [];
+            (joData.teams || []).forEach((t, ti) => {
+                (t.players || []).forEach(n => names.push({ name: n, group: ti + 1, time: t.time || '', course: t.course || '' }));
+            });
+            const scores = (cupData && cupData.scores) || {};
+            players = names.map(x => ({
+                ...x,
+                base: base[x.name] !== undefined ? base[x.name] : null,
+                day: (scores[x.name] !== undefined && scores[x.name] !== '') ? parseInt(scores[x.name]) : null
+            }));
+            players.sort((a, b) => {
+                const ab = a.base === null ? 999 : a.base, bb = b.base === null ? 999 : b.base;
+                return ab - bb || a.name.localeCompare(b.name, 'ko');
+            });
+
+            members = Object.keys(pd).sort((a, b) => a.localeCompare(b, 'ko'));
+        }
+
+        // 실제 등수 — 당일 타수 오름차순에서 k번째 자리의 타수를 가진 사람 전원
+        function winnersAt(k) {
+            const played = players.filter(p => p.day !== null).sort((a, b) => a.day - b.day);
+            if (played.length < k) return null;
+            const target = played[k - 1].day;
+            return { score: target, names: played.filter(p => p.day === target).map(p => p.name) };
+        }
+
+        function renderAll() {
+            document.getElementById('page').className = 'wrapper' + (isAdmin ? ' admin' : '');
+            document.getElementById('sub').innerText =
+                (joData.selectedDateStr || '11월04일(수)') + ' · 클럽72 하늘코스 · 출전 ' + players.length + '명';
+            const closed = isClosed();
+            const badge = document.getElementById('status-badge');
+            badge.innerHTML = closed ? '<span class="badge b-closed">마감</span>' : '<span class="badge b-open">접수중</span>';
+            document.getElementById('prize-box').innerHTML =
+                esc(guess.prize || '상품권 10만원') + '<small>맞춘 분들끼리 나눠 갖습니다</small>';
+
+            fillSelects();
+            renderResult();
+            renderPicks();
+            renderBase();
+        }
+
+        function fillSelects() {
+            const who = document.getElementById('who');
+            if (!who.options.length) {
+                who.innerHTML = '<option value="">이름을 선택하세요</option>' +
+                    members.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join('');
+            }
+            const opts = '<option value="">선택하세요</option>' + players.map(p =>
+                `<option value="${esc(p.name)}">${esc(p.name)} — 기준 ${p.base !== null ? p.base : '-'}타</option>`).join('');
+            ['r1', 'r10', 'r20'].forEach(id => {
+                const el = document.getElementById(id);
+                const keep = el.value;
+                el.innerHTML = opts;
+                if (keep) el.value = keep;
+            });
+            onWho(true);
+        }
+
+        function onWho(keepSel) {
+            const name = document.getElementById('who').value;
+            const mine = guess.picks[name];
+            if (mine && !keepSel) {
+                document.getElementById('r1').value = mine.r1 || '';
+                document.getElementById('r10').value = mine.r10 || '';
+                document.getElementById('r20').value = mine.r20 || '';
+            } else if (mine) {
+                ['r1', 'r10', 'r20'].forEach((id, i) => {
+                    const el = document.getElementById(id);
+                    if (!el.value) el.value = mine[['r1', 'r10', 'r20'][i]] || '';
+                });
+            }
+            const closed = isClosed();
+            ['r1', 'r10', 'r20'].forEach(id => { document.getElementById(id).disabled = closed; });
+            const btn = document.getElementById('submit-btn');
+            btn.disabled = closed;
+            btn.innerText = closed ? '접수가 마감되었습니다' : (mine ? '예측 수정하기' : '예측 제출하기');
+            const note = document.getElementById('my-note');
+            if (mine) {
+                note.style.display = 'block';
+                note.innerHTML = `제출하신 예측 — 1등 <b>${esc(mine.r1)}</b> · 10등 <b>${esc(mine.r10)}</b> · 20등 <b>${esc(mine.r20)}</b>`;
+            } else {
+                note.style.display = 'none';
+            }
+            renderPicks();
+        }
+
+        async function submitPick() {
+            if (isClosed()) { alert('접수가 마감되었습니다.'); return; }
+            const name = document.getElementById('who').value;
+            if (!name) { alert('내 이름을 먼저 선택하세요.'); return; }
+            const r1 = document.getElementById('r1').value;
+            const r10 = document.getElementById('r10').value;
+            const r20 = document.getElementById('r20').value;
+            if (!r1 || !r10 || !r20) { alert('1등 · 10등 · 20등을 모두 선택하세요.'); return; }
+            const set = new Set([r1, r10, r20]);
+            if (set.size < 3) { alert('같은 분을 두 번 고를 수 없습니다.'); return; }
+            if (await apiPost('/api/guess/pick', { name, r1, r10, r20 })) {
+                showToast('예측이 저장되었습니다!');
+                await loadAll();
+                document.getElementById('who').value = name;
+                onWho();
+            } else {
+                alert('저장에 실패했습니다. 다시 시도해 주세요.');
+            }
+        }
+
+        function renderResult() {
+            const w1 = winnersAt(1), w10 = winnersAt(10), w20 = winnersAt(20);
+            const card = document.getElementById('result-card');
+            if (!w1) { card.style.display = 'none'; return; }
+            card.style.display = 'block';
+
+            const rows = [[1, w1], [10, w10], [20, w20]].map(([k, w]) => `
+                <tr><td><b>${k}등</b></td>
+                    <td class="name">${w ? w.names.map(esc).join(' · ') : '<span class="miss">타수 입력 대기</span>'}</td>
+                    <td>${w ? w.score + '타' : '-'}</td></tr>`).join('');
+
+            // 적중 집계
+            const scored = Object.entries(guess.picks).map(([name, p]) => {
+                let hit = 0;
+                const d = [[p.r1, w1], [p.r10, w10], [p.r20, w20]].map(([pick, w]) => {
+                    const ok = w && w.names.includes(pick);
+                    if (ok) hit++;
+                    return `<span class="${ok ? 'hit' : 'miss'}">${esc(pick) || '-'}</span>`;
+                });
+                return { name, hit, cells: d };
+            }).sort((a, b) => b.hit - a.hit || a.name.localeCompare(b.name, 'ko'));
+
+            const top = scored.length ? scored[0].hit : 0;
+            const winners = scored.filter(x => x.hit === top && top > 0);
+            const amount = winners.length ? Math.floor(100000 / winners.length) : 0;
+
+            let body = `<table><tr><th>등수</th><th style="text-align:left;">실제 수상자</th><th>타수</th></tr>${rows}</table>`;
+            if (!scored.length) {
+                body += '<div class="locked-note">제출된 예측이 없습니다.</div>';
+            } else {
+                body += `<table style="margin-top:12px;">
+                    <tr><th style="text-align:left;">예측자</th><th>1등</th><th>10등</th><th>20등</th><th>적중</th></tr>
+                    ${scored.map(x => `<tr class="${winners.some(w => w.name === x.name) ? 'winner-row' : ''}">
+                        <td class="name">${x.hit === top && top > 0 ? '🎯 ' : ''}${esc(x.name)}</td>
+                        <td>${x.cells[0]}</td><td>${x.cells[1]}</td><td>${x.cells[2]}</td>
+                        <td><b>${x.hit}</b></td></tr>`).join('')}
+                </table>`;
+                body += winners.length
+                    ? `<div class="locked-note">최다 적중 <b>${top}개</b> — <b>${winners.map(w => esc(w.name)).join(' · ')}</b> ${winners.length}명이
+                       상품권 10만원을 나눠 1인당 <b>${amount.toLocaleString()}원</b>입니다.</div>`
+                    : '<div class="locked-note">아직 적중자가 없습니다.</div>';
+            }
+            document.getElementById('result-body').innerHTML = body;
+        }
+
+        function renderPicks() {
+            const names = Object.keys(guess.picks);
+            document.getElementById('pick-count').innerText = names.length + '명 참여';
+            const me = document.getElementById('who').value;
+            const open = isClosed() || (me && guess.picks[me]);
+            const body = document.getElementById('picks-body');
+            if (!names.length) {
+                body.innerHTML = '<div style="color:var(--text-muted);font-size:0.82rem;">아직 참여자가 없습니다. 첫 번째로 예측해 보세요.</div>';
+                return;
+            }
+            if (!open) {
+                body.innerHTML = `<div style="color:var(--text-muted);font-size:0.82rem;line-height:1.6;">
+                    현재 <b>${names.length}명</b>이 참여했습니다.<br>
+                    다른 분들의 예측은 <b>내 예측을 제출한 뒤</b> 공개됩니다.</div>`;
+                return;
+            }
+            body.innerHTML = `<table>
+                <tr><th style="text-align:left;">예측자</th><th>1등</th><th>10등</th><th>20등</th><th class="admin-col"></th></tr>
+                ${names.sort((a, b) => a.localeCompare(b, 'ko')).map(n => {
+                    const p = guess.picks[n];
+                    return `<tr><td class="name">${esc(n)}</td><td>${esc(p.r1)}</td><td>${esc(p.r10)}</td><td>${esc(p.r20)}</td>
+                        <td>${isAdmin ? `<button onclick="delPick('${esc(n)}')" style="background:none;border:none;color:var(--danger);cursor:pointer;">✖</button>` : ''}</td></tr>`;
+                }).join('')}
+            </table>`;
+        }
+
+        function renderBase() {
+            document.getElementById('base-body').innerHTML = `<table>
+                <tr><th>순</th><th style="text-align:left;">이름</th><th>기준타수</th><th>조</th><th>당일</th></tr>
+                ${players.map((p, i) => `<tr>
+                    <td>${i + 1}</td><td class="name">${esc(p.name)}</td>
+                    <td class="base">${p.base !== null ? p.base : '-'}</td>
+                    <td style="font-size:0.74rem;color:var(--text-muted);">${p.group}조 ${esc(p.time)}</td>
+                    <td>${p.day !== null ? '<b>' + p.day + '</b>' : '<span class="miss">-</span>'}</td>
+                </tr>`).join('')}
+            </table>
+            <div class="locked-note">기준타수는 올해 정기라운딩 평균타수입니다. 8월 알펜시아는 빠집니다. 실제 등수는 <b>대회 당일 타수</b>로 정해집니다.</div>`;
+        }
+
+        // ── 관리자 ──
+        function toggleAdmin() {
+            if (isAdmin) { isAdmin = false; renderAll(); showToast('관리자 모드 해제'); return; }
+            if (prompt('관리자 비밀번호를 입력하세요.') === '1234') {
+                isAdmin = true; renderAll(); showToast('관리자 모드');
+            } else if (event) { alert('비밀번호가 틀렸습니다.'); }
+        }
+        async function toggleStatus() {
+            if (!isAdmin) return;
+            const next = isClosed() ? 'open' : 'closed';
+            if (!confirm(next === 'closed' ? '접수를 마감할까요?' : '접수를 다시 열까요?')) return;
+            if (await apiPost('/api/guess/save', { status: next })) { showToast('변경되었습니다.'); await loadAll(); }
+        }
+        async function delPick(name) {
+            if (!isAdmin) return;
+            if (!confirm(name + ' 회원의 예측을 삭제할까요?')) return;
+            if (await apiPost('/api/guess/unpick', { name })) { showToast('삭제되었습니다.'); await loadAll(); }
+        }
+
+        loadAll();
+    </script>
+</body>
+</html>

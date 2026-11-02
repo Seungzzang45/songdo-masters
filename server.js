@@ -16,12 +16,13 @@ const NOTICE_FILE    = path.join(DATA_DIR, 'notice.json');    // 공지사항
 const PAIR_FILE      = path.join(DATA_DIR, 'pair_data.json'); // 짝꿍대전 토너먼트
 const ALPENSIA_FILE  = path.join(DATA_DIR, 'alpensia.json');  // 8월 알펜시아 1박2일 (차량/숙소 배정)
 const CUP_FILE       = path.join(DATA_DIR, 'cup_data.json');  // 회장기대회 (당일 스코어/추가 상품)
+const GUESS_FILE     = path.join(DATA_DIR, 'guess_data.json'); // 회장기 등수맞추기 이벤트
 
 // 영속 볼륨에 데이터가 없으면 레포에 동봉된 시드 파일을 1회 복사 (기존 데이터 보존)
 if (DATA_DIR !== __dirname) {
     try {
         fs.mkdirSync(DATA_DIR, { recursive: true });
-        [['data.json', DATA_FILE], ['golf_data.json', GOLF_DATA_FILE], ['vote_data.json', VOTE_DATA_FILE], ['notice.json', NOTICE_FILE], ['pair_data.json', PAIR_FILE], ['alpensia.json', ALPENSIA_FILE], ['cup_data.json', CUP_FILE]].forEach(([seedName, target]) => {
+        [['data.json', DATA_FILE], ['golf_data.json', GOLF_DATA_FILE], ['vote_data.json', VOTE_DATA_FILE], ['notice.json', NOTICE_FILE], ['pair_data.json', PAIR_FILE], ['alpensia.json', ALPENSIA_FILE], ['cup_data.json', CUP_FILE], ['guess_data.json', GUESS_FILE]].forEach(([seedName, target]) => {
             const seed = path.join(__dirname, seedName);
             if (!fs.existsSync(target) && fs.existsSync(seed)) {
                 fs.copyFileSync(seed, target);
@@ -284,6 +285,62 @@ app.post('/api/notice/save', (req, res) => {
     }
 });
 
+// --- 회장기 등수맞추기 API ---
+// 예측은 회원이 각자 제출하므로, 전체 덮어쓰기 대신 본인 항목만 갱신해 동시 제출 유실을 막는다.
+function readGuess() {
+    try {
+        if (fs.existsSync(GUESS_FILE)) return JSON.parse(fs.readFileSync(GUESS_FILE, 'utf8'));
+    } catch (e) { console.error('guess read 실패:', e); }
+    return { picks: {} };
+}
+
+app.get('/api/guess/load', (req, res) => {
+    res.type('application/json').send(JSON.stringify(readGuess()));
+});
+
+app.post('/api/guess/pick', (req, res) => {
+    try {
+        const { name, r1, r10, r20 } = req.body || {};
+        if (!name) return res.status(400).send('이름이 없습니다.');
+        const data = readGuess();
+        data.picks = data.picks || {};
+        data.picks[name] = { r1: r1 || '', r10: r10 || '', r20: r20 || '', timestamp: Date.now() };
+        saveWithBackup(GUESS_FILE, data);
+        res.send('success');
+    } catch (e) {
+        console.error('저장 에러:', e);
+        res.status(500).send('저장 실패: ' + e.message);
+    }
+});
+
+app.post('/api/guess/unpick', (req, res) => {
+    try {
+        const { name } = req.body || {};
+        const data = readGuess();
+        if (data.picks) delete data.picks[name];
+        saveWithBackup(GUESS_FILE, data);
+        res.send('success');
+    } catch (e) {
+        res.status(500).send('삭제 실패: ' + e.message);
+    }
+});
+
+// 총무 설정(제목·상금·마감·상태)만 갱신 — 회원 예측은 그대로 보존
+app.post('/api/guess/save', (req, res) => {
+    try {
+        const body = req.body || {};
+        const data = readGuess();
+        ['title', 'prize', 'deadline', 'status'].forEach(k => {
+            if (body[k] !== undefined) data[k] = body[k];
+        });
+        saveWithBackup(GUESS_FILE, data);
+        res.send('success');
+    } catch (e) {
+        console.error('저장 에러:', e);
+        res.status(500).send('저장 실패: ' + e.message);
+    }
+});
+
 // --- 회장기대회 API (당일 스코어/추가 상품 — 총무 단독 편집) ---
 app.get('/api/cup/load', (req, res) => {
     try {
@@ -341,7 +398,7 @@ app.post('/api/alpensia/save', (req, res) => {
 // --- 백업 목록 조회 ---
 app.get('/api/backups/:type', (req, res) => {
     const type = req.params.type; // 'data' | 'golf_data' | 'vote_data'
-    if (!['data', 'golf_data', 'vote_data', 'notice', 'pair_data', 'alpensia', 'cup_data'].includes(type)) {
+    if (!['data', 'golf_data', 'vote_data', 'notice', 'pair_data', 'alpensia', 'cup_data', 'guess_data'].includes(type)) {
         return res.status(400).json({ error: '유효하지 않은 타입' });
     }
     try {
@@ -364,7 +421,7 @@ app.get('/api/backups/:type', (req, res) => {
 app.post('/api/backups/restore', (req, res) => {
     const { filename, type } = req.body; // type: 'data' | 'golf_data' | 'vote_data'
     if (!filename || !type) return res.status(400).json({ error: 'filename과 type 필요' });
-    if (!['data', 'golf_data', 'vote_data', 'notice', 'pair_data', 'alpensia', 'cup_data'].includes(type)) {
+    if (!['data', 'golf_data', 'vote_data', 'notice', 'pair_data', 'alpensia', 'cup_data', 'guess_data'].includes(type)) {
         return res.status(400).json({ error: '유효하지 않은 타입' });
     }
     // 경로 순회 방지
