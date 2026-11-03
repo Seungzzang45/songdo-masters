@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<!-- 송도마스터즈 회장기 상품 리스트 — 선택 가능한 상품을 1개 단위로 나열해 보여주는 페이지 -->
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>회장기 상품 리스트</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #006747;
+            --gold: #c9a84c;
+            --gold-dark: #a07830;
+            --bg: #eef2ee;
+            --text-main: #1a2e1a;
+            --text-muted: #6b8270;
+            --border: rgba(0, 103, 71, 0.14);
+        }
+        * { box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            background-image:
+                radial-gradient(ellipse at 20% 10%, rgba(0,103,71,0.07) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 90%, rgba(201,168,76,0.06) 0%, transparent 60%);
+            color: var(--text-main);
+            font-family: 'Noto Sans KR', sans-serif;
+            margin: 0;
+            min-height: 100vh;
+        }
+        .wrapper { max-width: 640px; margin: 0 auto; padding: 20px 14px; }
+        .header { text-align: center; padding: 8px 0 14px; }
+        .header h1 { font-size: 1.4rem; font-weight: 900; margin: 0 0 6px; color: var(--primary); letter-spacing: -0.5px; }
+        .header h1 .gold { color: var(--gold); }
+        .subtitle { font-size: 0.78rem; color: var(--text-muted); margin: 0; }
+
+        .card { background: #fff; border: 1px solid var(--border); border-radius: 14px;
+                box-shadow: 0 3px 14px rgba(0,103,71,0.08); padding: 15px 16px; margin-bottom: 14px; }
+        .card h2 { background: linear-gradient(135deg, var(--primary), #00583c); color: #fff;
+                   border-radius: 14px 14px 0 0; margin: -15px -16px 13px; padding: 11px 16px;
+                   font-size: 0.95rem; font-weight: 900; border-bottom: 3px solid var(--gold); letter-spacing: -0.3px; }
+        .card h2 .sub { font-size: 0.7rem; font-weight: 500; color: rgba(255,255,255,0.78); margin-left: 6px; }
+
+        .total { display: flex; gap: 10px; margin-bottom: 14px; }
+        .total > div { flex: 1; background: #fff; border: 1px solid var(--border); border-radius: 14px;
+                       box-shadow: 0 3px 14px rgba(0,103,71,0.08); padding: 13px 10px; text-align: center; }
+        .total .big { display: block; font-size: 1.5rem; font-weight: 900; color: var(--primary); line-height: 1.1; }
+        .total .lbl { display: block; font-size: 0.72rem; color: var(--text-muted); margin-top: 3px; font-weight: 700; }
+
+        .row { display: flex; align-items: flex-start; gap: 10px; padding: 10px 2px;
+               border-bottom: 1px dashed var(--border); }
+        .row:last-child { border-bottom: none; }
+        .no { flex: 0 0 24px; height: 24px; border-radius: 50%; background: rgba(0,103,71,0.08);
+              color: var(--primary); font-size: 0.72rem; font-weight: 900;
+              display: flex; align-items: center; justify-content: center; margin-top: 1px; }
+        .body { flex: 1; min-width: 0; }
+        .name { font-size: 0.92rem; font-weight: 700; line-height: 1.4; }
+        .note { font-size: 0.73rem; color: var(--text-muted); margin-top: 3px; line-height: 1.45; }
+        .from { font-size: 0.72rem; font-weight: 800; color: var(--gold-dark); margin-top: 3px; }
+
+        .note-box { font-size: 0.79rem; line-height: 1.6; color: var(--text-muted); background: #f7faf8;
+                    border-left: 3px solid var(--gold); border-radius: 0 8px 8px 0; padding: 10px 12px; }
+        .link-btn { display: block; text-align: center; background: var(--primary); color: #fff;
+                    text-decoration: none; font-weight: 800; font-size: 0.9rem;
+                    padding: 14px; border-radius: 12px; margin-bottom: 14px; }
+    </style>
+</head>
+<body>
+    <div class="wrapper">
+        <header class="header">
+            <h1>🎁 회장기 <span class="gold">상품 리스트</span></h1>
+            <p class="subtitle">선택 가능한 상품을 1개 단위로 나열했습니다</p>
+        </header>
+
+        <div class="total">
+            <div><span class="big" id="t-all">0</span><span class="lbl">전체 상품</span></div>
+            <div><span class="big" id="t-buy">0</span><span class="lbl">회비 구매</span></div>
+            <div><span class="big" id="t-spon">0</span><span class="lbl">찬조 상품</span></div>
+        </div>
+
+        <section class="card">
+            <h2>💳 회비 구매 상품 <span class="sub" id="buy-cnt"></span></h2>
+            <div id="buy-list"></div>
+        </section>
+
+        <section class="card">
+            <h2>🤝 찬조 상품 <span class="sub" id="spon-cnt"></span></h2>
+            <div id="spon-list"></div>
+        </section>
+
+        <a class="link-btn" href="/cup/">🏆 상품 선택 우선순위 보기</a>
+
+        <div class="note-box">
+            번호는 목록 번호일 뿐이며 선택 순서와는 관계가 없습니다.<br>
+            같은 상품이 두 줄로 나온 것은 수량이 2개라서 각각 1개씩 고를 수 있다는 뜻입니다.<br>
+            선택은 <b>회장기대회 메뉴의 상품 선택 우선순위</b>에 따라 진행됩니다.
+        </div>
+    </div>
+
+    <script>
+        // 회비로 구매한 상품 — 수량 2개인 품목은 두 줄로 나열한다.
+        const BUY = [
+            { item: '타이틀리스트 스탠드백' },
+            { item: '테일러메이드 스탠드백' },
+            { item: '제스타임 웨지', note: '52 · 56 · 60도 선택 가능 · 샤프트 선택 가능 · PS골프샵' },
+            { item: '피레티 퍼터' },
+            { item: 'R2G 올레드 거리측정기' },
+            { item: 'R2G 올레드 거리측정기' },
+            { item: '말본 보스턴백' },
+            { item: '캘러웨이 보스턴백' },
+            { item: '스카티카메론 써클티 모자' },
+            { item: '스카티카메론 써클티 퍼팅디스크' },
+            { item: '퍼터그립 교환권', note: 'PS골프샵' },
+            { item: '말본 골프모자' },
+            { item: '말본 골프모자' },
+            { item: '골드크로버 아이언커버' },
+            { item: '골드크로버 아이언커버' },
+            { item: '아이언그립 교체권', note: 'PS골프샵' }
+        ];
+
+        // 찬조 상품 — 찬조하신 분 이름을 함께 표시한다.
+        const SPON = [
+            { item: '승우의 랜덤기프트박스', from: '신승우' },
+            { item: '프리미엄 와규 선물세트 1.2kg', from: '김길용' },
+            { item: '프리미엄 와규 선물세트 1.2kg', from: '김길용' },
+            { item: '공진단 1세트', from: '박지훈75' },
+            { item: '공진단 1세트', from: '박지훈75' },
+            { item: '스카티카메론 퍼터커버', from: '오유근' },
+            { item: '스카티카메론 퍼터커버', from: '오유근' },
+            { item: '발렌타인 30년 1병', from: '오유근' },
+            { item: '캐디톡 미니프로 레이저 측정기', from: '김은묵' },
+            { item: '정관장 화린·청랑 부부세트', from: '서지우' },
+            { item: '닷사이23 1병', from: '최성윤' },
+            { item: '닷사이23 1병', from: '최성윤' },
+            { item: '선글라스', from: '김대영' },
+            { item: '장뇌삼 8뿌리', from: '정일성' }
+        ];
+
+        function esc(s) {
+            return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+
+        function render(list, elId) {
+            document.getElementById(elId).innerHTML = list.map((p, i) => `
+                <div class="row">
+                    <span class="no">${i + 1}</span>
+                    <div class="body">
+                        <div class="name">${esc(p.item)}</div>
+                        ${p.note ? `<div class="note">${esc(p.note)}</div>` : ''}
+                        ${p.from ? `<div class="from">🤝 ${esc(p.from)} 찬조</div>` : ''}
+                    </div>
+                </div>`).join('');
+        }
+
+        render(BUY, 'buy-list');
+        render(SPON, 'spon-list');
+        document.getElementById('t-all').innerText = BUY.length + SPON.length;
+        document.getElementById('t-buy').innerText = BUY.length;
+        document.getElementById('t-spon').innerText = SPON.length;
+        document.getElementById('buy-cnt').innerText = BUY.length + '점';
+        document.getElementById('spon-cnt').innerText = SPON.length + '점';
+    </script>
+    <script src="/nav.js" data-active="prizelist"></script>
+</body>
+</html>

@@ -96,7 +96,8 @@
             <p class="subtitle">SONGDO MASTERS GOLF CLUB</p>
         </header>
 
-        <section id="notice-card" class="card notice-card">
+        <!-- 공지사항 — 회장기 기간 동안 숨김 (display 제거하면 그대로 복구) -->
+        <section id="notice-card" class="card notice-card" style="display:none;">
             <div class="notice-title">
                 <span>📢 공지사항</span>
                 <button id="notice-add-btn" style="display:none; background:var(--primary); color:#fff; border:none; border-radius:14px; padding:4px 12px; font-size:0.78rem; font-weight:700; cursor:pointer; font-family:inherit;" onclick="openNoticeModal()">+ 작성</button>
@@ -134,10 +135,16 @@
                 <span class="menu-name">시상품</span>
                 <div class="menu-desc">시상 내역 · 수상자</div>
             </a>
-            <a class="card menu-card" href="/jo/?tab=score">
+            <!-- 성적 · 핸디 — 회장기 기간 동안 숨김 (display 제거하면 그대로 복구) -->
+            <a class="card menu-card" href="/jo/?tab=score" style="display:none;">
                 <span class="menu-icon">📊</span>
                 <span class="menu-name">성적 · 핸디</span>
                 <div class="menu-desc">성적/핸디 관리</div>
+            </a>
+            <a class="card menu-card" href="/prizelist/">
+                <span class="menu-icon">🎁</span>
+                <span class="menu-name">상품 리스트</span>
+                <div class="menu-desc">회장기 상품 30점</div>
             </a>
             <a class="card menu-card" href="/contact/">
                 <span class="menu-icon">📞</span>

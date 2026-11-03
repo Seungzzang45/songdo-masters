@@ -1,10 +1,11 @@
-// 모든 페이지 하단에 고정 탭바(홈/투표/조편성/시상품/등수맞추기/연락처)를 삽입하는 공통 스크립트
+// 모든 페이지 하단에 고정 탭바(홈/투표/조편성/상품리스트/시상품/등수맞추기/연락처)를 삽입하는 공통 스크립트
 (function () {
     var active = (document.currentScript && document.currentScript.dataset.active) || '';
     var tabs = [
         { key: 'home',    href: '/',         icon: '🏠', label: '홈' },
         { key: 'vote',    href: '/vote/',    icon: '⛳', label: '투표' },
         { key: 'jo',      href: '/jo/',      icon: '👥', label: '조편성' },
+        { key: 'prizelist', href: '/prizelist/', icon: '🎁', label: '상품리스트' },
         { key: 'prize',   href: '/prize/',   icon: '🏆', label: '시상품' },
         { key: 'guess',   href: '/guess/',   icon: '🎯', label: '등수맞추기' },
         { key: 'contact', href: '/contact/', icon: '📞', label: '연락처' }
@@ -25,7 +26,7 @@
             'color:' + (isActive ? '#006747' : '#9aab9f') + ';';
         a.innerHTML =
             '<span style="display:block; font-size:21px; line-height:1.2;' + (isActive ? '' : ' filter:grayscale(1) opacity(0.55);') + '">' + t.icon + '</span>' +
-            '<span style="display:block; font-size:11px; font-weight:' + (isActive ? '800' : '500') + '; margin-top:1px;">' + t.label + '</span>';
+            '<span style="display:block; font-size:10px; font-weight:' + (isActive ? '800' : '500') + '; margin-top:1px; white-space:nowrap; letter-spacing:-0.4px;">' + t.label + '</span>';
         nav.appendChild(a);
     });
 
