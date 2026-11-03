@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 송도마스터즈 회장기 상품 리스트 — 선택 가능한 상품을 1개 단위로 나열해 보여주는 페이지 -->
+<!-- 송도마스터즈 회장기 상품 리스트 — 선택 가능한 상품을 1개 단위로 한 목록에 나열해 보여주는 페이지 -->
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
@@ -40,11 +40,12 @@
                    font-size: 0.95rem; font-weight: 900; border-bottom: 3px solid var(--gold); letter-spacing: -0.3px; }
         .card h2 .sub { font-size: 0.7rem; font-weight: 500; color: rgba(255,255,255,0.78); margin-left: 6px; }
 
-        .total { display: flex; gap: 10px; margin-bottom: 14px; }
+        .total { display: flex; gap: 8px; margin-bottom: 14px; }
         .total > div { flex: 1; background: #fff; border: 1px solid var(--border); border-radius: 14px;
-                       box-shadow: 0 3px 14px rgba(0,103,71,0.08); padding: 13px 10px; text-align: center; }
-        .total .big { display: block; font-size: 1.5rem; font-weight: 900; color: var(--primary); line-height: 1.1; }
-        .total .lbl { display: block; font-size: 0.72rem; color: var(--text-muted); margin-top: 3px; font-weight: 700; }
+                       box-shadow: 0 3px 14px rgba(0,103,71,0.08); padding: 13px 4px; text-align: center; }
+        .total .big { display: block; font-size: 1.45rem; font-weight: 900; color: var(--primary); line-height: 1.1; }
+        .total .lbl { display: block; font-size: 0.68rem; color: var(--text-muted); margin-top: 3px;
+                      font-weight: 700; white-space: nowrap; letter-spacing: -0.3px; }
 
         .row { display: flex; align-items: flex-start; gap: 10px; padding: 10px 2px;
                border-bottom: 1px dashed var(--border); }
@@ -56,6 +57,9 @@
         .name { font-size: 0.92rem; font-weight: 700; line-height: 1.4; }
         .note { font-size: 0.73rem; color: var(--text-muted); margin-top: 3px; line-height: 1.45; }
         .from { font-size: 0.72rem; font-weight: 800; color: var(--gold-dark); margin-top: 3px; }
+        .tag { flex: 0 0 auto; font-size: 0.65rem; font-weight: 800; color: var(--text-muted);
+               background: rgba(0,0,0,0.055); border-radius: 8px; padding: 3px 7px;
+               white-space: nowrap; margin-top: 2px; }
 
         .note-box { font-size: 0.79rem; line-height: 1.6; color: var(--text-muted); background: #f7faf8;
                     border-left: 3px solid var(--gold); border-radius: 0 8px 8px 0; padding: 10px 12px; }
@@ -72,19 +76,15 @@
         </header>
 
         <div class="total">
-            <div><span class="big" id="t-all">0</span><span class="lbl">전체 상품</span></div>
-            <div><span class="big" id="t-buy">0</span><span class="lbl">회비 구매</span></div>
-            <div><span class="big" id="t-spon">0</span><span class="lbl">찬조 상품</span></div>
+            <div><span class="big" id="t-all">0</span><span class="lbl">전체</span></div>
+            <div><span class="big" id="t-buy">0</span><span class="lbl">회비구매</span></div>
+            <div><span class="big" id="t-spon">0</span><span class="lbl">찬조</span></div>
+            <div><span class="big" id="t-gift">0</span><span class="lbl">상품권</span></div>
         </div>
 
         <section class="card">
-            <h2>💳 회비 구매 상품 <span class="sub" id="buy-cnt"></span></h2>
-            <div id="buy-list"></div>
-        </section>
-
-        <section class="card">
-            <h2>🤝 찬조 상품 <span class="sub" id="spon-cnt"></span></h2>
-            <div id="spon-list"></div>
+            <h2>🎁 전체 상품 <span class="sub" id="all-cnt"></span></h2>
+            <div id="all-list"></div>
         </section>
 
         <a class="link-btn" href="/cup/">🏆 상품 선택 우선순위 보기</a>
@@ -97,67 +97,67 @@
     </div>
 
     <script>
-        // 회비로 구매한 상품 — 수량 2개인 품목은 두 줄로 나열한다.
-        const BUY = [
-            { item: '타이틀리스트 스탠드백' },
-            { item: '테일러메이드 스탠드백' },
-            { item: '제스타임 웨지', note: '52 · 56 · 60도 선택 가능 · 샤프트 선택 가능 · PS골프샵' },
-            { item: '피레티 퍼터' },
-            { item: 'R2G 올레드 거리측정기' },
-            { item: 'R2G 올레드 거리측정기' },
-            { item: '말본 보스턴백' },
-            { item: '캘러웨이 보스턴백' },
-            { item: '스카티카메론 써클티 모자' },
-            { item: '스카티카메론 써클티 퍼팅디스크' },
-            { item: '퍼터그립 교환권', note: 'PS골프샵' },
-            { item: '말본 골프모자' },
-            { item: '말본 골프모자' },
-            { item: '골드크로버 아이언커버' },
-            { item: '골드크로버 아이언커버' },
-            { item: '아이언그립 교체권', note: 'PS골프샵' }
-        ];
+        // 회비구매 · 찬조 · 상품권을 한 목록에 합쳐 1개 단위로 나열한다.
+        const PRIZES = [
+            { item: '타이틀리스트 스탠드백', tag: '회비구매' },
+            { item: '테일러메이드 스탠드백', tag: '회비구매' },
+            { item: '제스타임 웨지', note: '52 · 56 · 60도 선택 가능 · 샤프트 선택 가능 · PS골프샵', tag: '회비구매' },
+            { item: '피레티 퍼터', tag: '회비구매' },
+            { item: 'R2G 올레드 거리측정기', tag: '회비구매' },
+            { item: 'R2G 올레드 거리측정기', tag: '회비구매' },
+            { item: '말본 보스턴백', tag: '회비구매' },
+            { item: '캘러웨이 보스턴백', tag: '회비구매' },
+            { item: '스카티카메론 써클티 모자', tag: '회비구매' },
+            { item: '스카티카메론 써클티 퍼팅디스크', tag: '회비구매' },
+            { item: '퍼터그립 교환권', note: 'PS골프샵', tag: '회비구매' },
+            { item: '말본 골프모자', tag: '회비구매' },
+            { item: '말본 골프모자', tag: '회비구매' },
+            { item: '골드크로버 아이언커버', tag: '회비구매' },
+            { item: '골드크로버 아이언커버', tag: '회비구매' },
+            { item: '아이언그립 교체권', note: 'PS골프샵', tag: '회비구매' },
 
-        // 찬조 상품 — 찬조하신 분 이름을 함께 표시한다.
-        const SPON = [
-            { item: '승우의 랜덤기프트박스', from: '신승우' },
-            { item: '프리미엄 와규 선물세트 1.2kg', from: '김길용' },
-            { item: '프리미엄 와규 선물세트 1.2kg', from: '김길용' },
-            { item: '공진단 1세트', from: '박지훈75' },
-            { item: '공진단 1세트', from: '박지훈75' },
-            { item: '스카티카메론 퍼터커버', from: '오유근' },
-            { item: '스카티카메론 퍼터커버', from: '오유근' },
-            { item: '발렌타인 30년 1병', from: '오유근' },
-            { item: '캐디톡 미니프로 레이저 측정기', from: '김은묵' },
-            { item: '정관장 화린·청랑 부부세트', from: '서지우' },
-            { item: '닷사이23 1병', from: '최성윤' },
-            { item: '닷사이23 1병', from: '최성윤' },
-            { item: '선글라스', from: '김대영' },
-            { item: '장뇌삼 8뿌리', from: '정일성' }
+            { item: '승우의 랜덤기프트박스', from: '신승우', tag: '찬조' },
+            { item: '프리미엄 와규 선물세트 1.2kg', from: '김길용', tag: '찬조' },
+            { item: '프리미엄 와규 선물세트 1.2kg', from: '김길용', tag: '찬조' },
+            { item: '공진단 1세트', from: '박지훈75', tag: '찬조' },
+            { item: '공진단 1세트', from: '박지훈75', tag: '찬조' },
+            { item: '스카티카메론 퍼터커버', from: '오유근', tag: '찬조' },
+            { item: '스카티카메론 퍼터커버', from: '오유근', tag: '찬조' },
+            { item: '발렌타인 30년 1병', from: '오유근', tag: '찬조' },
+            { item: '캐디톡 미니프로 레이저 측정기', from: '김은묵', tag: '찬조' },
+            { item: '정관장 화린·청랑 부부세트', from: '서지우', tag: '찬조' },
+            { item: '닷사이23 1병', from: '최성윤', tag: '찬조' },
+            { item: '닷사이23 1병', from: '최성윤', tag: '찬조' },
+            { item: '선글라스', from: '김대영', tag: '찬조' },
+            { item: '장뇌삼 8뿌리', from: '정일성', tag: '찬조' },
+
+            { item: '상품권 10만원', tag: '상품권' },
+            { item: '상품권 10만원', tag: '상품권' },
+            { item: '상품권 5만원', tag: '상품권' },
+            { item: '상품권 5만원', tag: '상품권' }
         ];
 
         function esc(s) {
             return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         }
 
-        function render(list, elId) {
-            document.getElementById(elId).innerHTML = list.map((p, i) => `
-                <div class="row">
-                    <span class="no">${i + 1}</span>
-                    <div class="body">
-                        <div class="name">${esc(p.item)}</div>
-                        ${p.note ? `<div class="note">${esc(p.note)}</div>` : ''}
-                        ${p.from ? `<div class="from">🤝 ${esc(p.from)} 찬조</div>` : ''}
-                    </div>
-                </div>`).join('');
-        }
+        document.getElementById('all-list').innerHTML = PRIZES.map((p, i) => `
+            <div class="row">
+                <span class="no">${i + 1}</span>
+                <div class="body">
+                    <div class="name">${esc(p.item)}</div>
+                    ${p.note ? `<div class="note">${esc(p.note)}</div>` : ''}
+                    ${p.from ? `<div class="from">🤝 ${esc(p.from)} 찬조</div>` : ''}
+                </div>
+                <span class="tag">${esc(p.tag)}</span>
+            </div>`).join('');
 
-        render(BUY, 'buy-list');
-        render(SPON, 'spon-list');
-        document.getElementById('t-all').innerText = BUY.length + SPON.length;
-        document.getElementById('t-buy').innerText = BUY.length;
-        document.getElementById('t-spon').innerText = SPON.length;
-        document.getElementById('buy-cnt').innerText = BUY.length + '점';
-        document.getElementById('spon-cnt').innerText = SPON.length + '점';
+        const cnt = t => PRIZES.filter(p => p.tag === t).length;
+        document.getElementById('t-all').innerText = PRIZES.length;
+        document.getElementById('t-buy').innerText = cnt('회비구매');
+        document.getElementById('t-spon').innerText = cnt('찬조');
+        document.getElementById('t-gift').innerText = cnt('상품권');
+        document.getElementById('all-cnt').innerText = PRIZES.length + '점';
     </script>
     <script src="/nav.js" data-active="prizelist"></script>
 </body>
