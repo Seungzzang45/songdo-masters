@@ -376,6 +376,10 @@ function createPollCard(poll) {
     });
     const pendingCount = MEMBERS.length - votedCount;
 
+    // 그린피·팀수가 없는 모임(송년회 등)은 해당 항목을 빼고 표시한다
+    const feeMeta = isNaN(parseInt(poll.fee)) ? '' : ` &middot; ${parseInt(poll.fee).toLocaleString()}원`;
+    const teamsMeta = poll.teams ? ` &middot; ${poll.teams}팀` : '';
+
     // 요약 헤더용 미니 칩
     let miniChipsHTML = '';
     for (const opt in optionCounts) {
@@ -439,7 +443,7 @@ function createPollCard(poll) {
                 <span class="expand-toggle">${isExpanded ? '▲' : '▼'}</span>
             </div>
             <div class="poll-summary-bottom">
-                <span class="poll-summary-meta">${formatDateStr(poll.date)} ${poll.time} &middot; ${poll.course} &middot; ${parseInt(poll.fee).toLocaleString()}원 &middot; ${poll.teams}팀</span>
+                <span class="poll-summary-meta">${formatDateStr(poll.date)} ${poll.time} &middot; ${poll.course}${feeMeta}${teamsMeta}</span>
                 <div class="mini-chips-row">${miniChipsHTML}</div>
             </div>
         </div>
