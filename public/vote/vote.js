@@ -3,8 +3,16 @@ const MEMBERS = [
     "강성규", "김길용", "김대영", "김두환", "김용민", "김은묵", "김정규", "김정택", "김종천", "남기혁",
     "문홍권", "박다원", "박지훈79", "박지훈75", "배상필", "배현호", "서경석", "서지우", "성종훈", "신승우", "심정수",
     "양희모", "오대성", "오성열", "오유근", "이광호", "이민형", "이성구", "이재희", "이필선", "임형준",
-    "장원영", "정우전", "정일성", "조성민", "최성윤", "홍동훈"
+    "장원영", "정일성", "조성민", "최성윤", "홍동훈"
 ];
+
+// 탈퇴 회원 — 새 투표 대상에서는 빠지지만 이미 투표한 지난 건에는 기록이 그대로 남는다.
+const RETIRED_MEMBERS = ["정우전"];
+
+function rosterFor(poll) {
+    const votes = (poll && poll.votes) || {};
+    return MEMBERS.concat(RETIRED_MEMBERS.filter(name => votes[name]));
+}
 
 let voteData = { polls: [] };
 let isAdmin = false;
@@ -313,7 +321,7 @@ function createVoterGroupsHTML(poll, isClosed) {
     (poll.options || []).forEach(opt => { groups[opt] = []; });
 
     const votedSet = new Set(Object.keys(poll.votes));
-    MEMBERS.forEach(memberName => {
+    rosterFor(poll).forEach(memberName => {
         const v = poll.votes[memberName];
         if (v) {
             const opts = Array.isArray(v.option) ? v.option : [v.option];
@@ -374,7 +382,7 @@ function createPollCard(poll) {
             else optionCounts[opt] = 1;
         });
     });
-    const pendingCount = MEMBERS.length - votedCount;
+    const pendingCount = rosterFor(poll).length - votedCount;
 
     // 그린피·팀수가 없는 모임(송년회 등)은 해당 항목을 빼고 표시한다
     const feeMeta = isNaN(parseInt(poll.fee)) ? '' : ` &middot; ${parseInt(poll.fee).toLocaleString()}원`;
@@ -453,7 +461,7 @@ function createPollCard(poll) {
             ${!isClosed ? createVoteForm(poll) : ''}
 
             <div class="dashboard">
-                <h3>투표 현황 (${votedCount}/${MEMBERS.length})</h3>
+                <h3>투표 현황 (${votedCount}/${rosterFor(poll).length})</h3>
                 <div class="status-summary">${summaryHTML}</div>
                 ${createVoterGroupsHTML(poll, isClosed)}
             </div>
